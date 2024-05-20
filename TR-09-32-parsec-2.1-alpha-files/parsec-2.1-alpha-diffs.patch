@@ -1,0 +1,257 @@
+diff -crB clean/parsec-2.1/pkgs/apps/bodytrack/src/config.h.in parsec-2.1/pkgs/apps/bodytrack/src/config.h.in
+*** clean/parsec-2.1/pkgs/apps/bodytrack/src/config.h.in	2008-10-07 19:46:14.000000000 -0500
+--- parsec-2.1/pkgs/apps/bodytrack/src/config.h.in	2009-12-08 11:35:14.000000000 -0600
+***************
+*** 98,101 ****
+  #endif
+
+  /* Define to rpl_malloc if the replacement function should be used. */
+! #undef malloc
+--- 98,101 ----
+  #endif
+
+  /* Define to rpl_malloc if the replacement function should be used. */
+! //#undef malloc
+diff -crB clean/parsec-2.1/pkgs/apps/bodytrack/src/TrackingBenchmark/Makefile.in parsec-2.1/pkgs/apps/bodytrack/src/TrackingBenchmark/Makefile.in
+*** clean/parsec-2.1/pkgs/apps/bodytrack/src/TrackingBenchmark/Makefile.in	2008-10-07 19:44:40.000000000 -0500
+--- parsec-2.1/pkgs/apps/bodytrack/src/TrackingBenchmark/Makefile.in	2009-12-08 11:35:14.000000000 -0600
+***************
+*** 104,110 ****
+  	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+  	$(AM_CXXFLAGS) $(CXXFLAGS)
+  CXXLD = $(CXX)
+! CXXLINK = $(LIBTOOL) --tag=CXX --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+  	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+  COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+  	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+--- 104,110 ----
+  	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+  	$(AM_CXXFLAGS) $(CXXFLAGS)
+  CXXLD = $(CXX)
+! CXXLINK = $(LIBTOOL) --tag=CXX --mode=link $(CXXLD) -all-static $(AM_CXXFLAGS) \
+  	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+  COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+  	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+***************
+*** 112,118 ****
+  	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+  	$(AM_CFLAGS) $(CFLAGS)
+  CCLD = $(CC)
+! LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+  	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+  SOURCES = $(bodytrack_SOURCES)
+  DIST_SOURCES = $(am__bodytrack_SOURCES_DIST)
+--- 112,118 ----
+  	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+  	$(AM_CFLAGS) $(CFLAGS)
+  CCLD = $(CC)
+! LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) -all-static $(AM_CFLAGS) $(CFLAGS) \
+  	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+  SOURCES = $(bodytrack_SOURCES)
+  DIST_SOURCES = $(am__bodytrack_SOURCES_DIST)
+diff -crB clean/parsec-2.1/pkgs/apps/facesim/src/Public_Library/Makefile.common parsec-2.1/pkgs/apps/facesim/src/Public_Library/Makefile.common
+*** clean/parsec-2.1/pkgs/apps/facesim/src/Public_Library/Makefile.common	2007-10-08 14:20:09.000000000 -0500
+--- parsec-2.1/pkgs/apps/facesim/src/Public_Library/Makefile.common	2009-12-08 11:35:14.000000000 -0600
+***************
+*** 335,340 ****
+--- 335,341 ----
+  	mkdir -p $(PHYSBAM_LIBDIR)
+  	rm -f $@
+  	$(AR) -r $@ $^
++ 	$(RANLIB) $@
+  else
+
+  $(error "STATIC_LIBRARY does not support multiple targets")
+diff -crB clean/parsec-2.1/pkgs/apps/ferret/src/Makefile parsec-2.1/pkgs/apps/ferret/src/Makefile
+*** clean/parsec-2.1/pkgs/apps/ferret/src/Makefile	2009-02-05 21:34:15.000000000 -0600
+--- parsec-2.1/pkgs/apps/ferret/src/Makefile	2009-12-08 11:35:14.000000000 -0600
+***************
+*** 43,48 ****
+--- 43,49 ----
+  $(LIBDIR)/libcass.a:	$(lib_obj)
+  	@echo "   A  '$@'"
+  	@$(AR) rcs $@ $^
++ 	@$(RANLIB) $@
+
+  # build the image support library
+  libimage_src := image.c extract.c edge.c srm.c
+***************
+*** 52,57 ****
+--- 53,59 ----
+  $(LIBDIR)/libcassimage.a:	$(libimage_obj)
+  	@echo "   A  '$@'"
+  	@$(AR) rcs $@ $^
++ 	@$(RANLIB) $@
+
+  # build the tool programs
+  tools_src := $(wildcard tools/*.c)
+diff -crB clean/parsec-2.1/pkgs/kernels/dedup/src/dedupdef.h parsec-2.1/pkgs/kernels/dedup/src/dedupdef.h
+*** clean/parsec-2.1/pkgs/kernels/dedup/src/dedupdef.h	2009-01-27 19:09:55.000000000 -0600
+--- parsec-2.1/pkgs/kernels/dedup/src/dedupdef.h	2009-12-08 11:35:14.000000000 -0600
+***************
+*** 182,188 ****
+  #define PORT 12340
+
+
+! #define MAXBUF (600*1024*1024)     /* 128 MB for buffers */
+  #define ANCHOR_JUMP (2*1024*1024) //best for all 2*1024*1024
+
+  #define MAX_PER_FETCH 10000
+--- 182,188 ----
+  #define PORT 12340
+
+
+! #define MAXBUF (30*1024*1024)     /* 128 MB for buffers */
+  #define ANCHOR_JUMP (2*1024*1024) //best for all 2*1024*1024
+
+  #define MAX_PER_FETCH 10000
+diff -crB clean/parsec-2.1/pkgs/kernels/dedup/src/encoder.c parsec-2.1/pkgs/kernels/dedup/src/encoder.c
+*** clean/parsec-2.1/pkgs/kernels/dedup/src/encoder.c	2009-01-27 19:19:20.000000000 -0600
+--- parsec-2.1/pkgs/kernels/dedup/src/encoder.c	2009-12-08 11:35:14.000000000 -0600
+***************
+*** 1132,1138 ****
+        EXIT_TRACE("not a normal file: %s\n", conf->infile);
+
+      /* src file open */
+!     if((fd = open(conf->infile, O_RDONLY | O_LARGEFILE)) < 0)
+        EXIT_TRACE("%s file open error %s\n", conf->infile, strerror(errno));
+
+  #ifdef PARALLEL
+--- 1132,1138 ----
+        EXIT_TRACE("not a normal file: %s\n", conf->infile);
+
+      /* src file open */
+!     if((fd = open(conf->infile, O_RDONLY)) < 0)
+        EXIT_TRACE("%s file open error %s\n", conf->infile, strerror(errno));
+
+  #ifdef PARALLEL
+diff -crB clean/parsec-2.1/pkgs/kernels/streamcluster/src/parsec_barrier.hpp parsec-2.1/pkgs/kernels/streamcluster/src/parsec_barrier.hpp
+*** clean/parsec-2.1/pkgs/kernels/streamcluster/src/parsec_barrier.hpp	2009-07-30 16:27:45.000000000 -0500
+--- parsec-2.1/pkgs/kernels/streamcluster/src/parsec_barrier.hpp	2009-12-15 10:48:16.000000000 -0600
+***************
+*** 20,32 ****
+  //use the parsec_barrier* replacement calls without the need to touch the source
+  //code (other than including this header file), but it makes it harder to understand
+  //what is going on
+! #define ENABLE_AUTOMATIC_DROPIN
+
+  //Whether to allow the use of spinning. If enabled then the barrier implementation
+  //will busy-wait on a flag first. After a pre-determined amount of time has passed
+  //without any success it will fall back to waiting on a condition variable. Spinning
+  //will result in unsynchronized memory accesses to the flag.
+! #define ENABLE_SPIN_BARRIER
+
+
+
+--- 20,32 ----
+  //use the parsec_barrier* replacement calls without the need to touch the source
+  //code (other than including this header file), but it makes it harder to understand
+  //what is going on
+! //#define ENABLE_AUTOMATIC_DROPIN
+
+  //Whether to allow the use of spinning. If enabled then the barrier implementation
+  //will busy-wait on a flag first. After a pre-determined amount of time has passed
+  //without any success it will fall back to waiting on a condition variable. Spinning
+  //will result in unsynchronized memory accesses to the flag.
+! //#define ENABLE_SPIN_BARRIER
+
+
+
+diff -crB clean/parsec-2.1/pkgs/libs/hooks/src/config.h parsec-2.1/pkgs/libs/hooks/src/config.h
+*** clean/parsec-2.1/pkgs/libs/hooks/src/config.h	2009-08-12 17:47:26.000000000 -0500
+--- parsec-2.1/pkgs/libs/hooks/src/config.h	2009-12-15 10:48:51.000000000 -0600
+***************
+*** 132,137 ****
+--- 132,142 ----
+  #endif
+
+
++ #if ENABLE_M5_TRIGGER
++ #include <stdint.h>
++ void m5_dumpreset_stats(uint64_t ns_delay, uint64_t ns_period);
++ void m5_checkpoint(uint64_t ns_delay, uint64_t ns_period);
++ #endif
+
+  /** \brief Prefix for all output.
+   *
+diff -crB clean/parsec-2.1/pkgs/libs/hooks/src/hooks.c parsec-2.1/pkgs/libs/hooks/src/hooks.c
+*** clean/parsec-2.1/pkgs/libs/hooks/src/hooks.c	2009-08-11 21:30:11.000000000 -0500
+--- parsec-2.1/pkgs/libs/hooks/src/hooks.c	2009-12-15 10:49:47.000000000 -0600
+***************
+*** 195,200 ****
+--- 195,208 ----
+    #if ENABLE_PTLSIM_TRIGGER
+    ptlcall_switch_to_sim();
+    #endif //ENABLE_PTLSIM_TRIGGER
++
++   #if ENABLE_M5_TRIGGER
++   m5_dumpreset_stats(0,0);
++   #endif
++
++   #if ENABLE_M5_CKPTS
++   m5_checkpoint(0,0);
++   #endif
+  }
+
+
+***************
+*** 207,212 ****
+--- 215,224 ----
+    assert(num_bench_ends==0);
+    #endif //DEBUG
+
++   #if ENABLE_M5_TRIGGER
++   m5_dumpreset_stats(0,0);
++   #endif
++
+    #if ENABLE_SIMICS_MAGIC
+    MAGIC_BREAKPOINT;
+    #endif //ENABLE_SIMICS_MAGIC
+diff -crB clean/parsec-2.1/pkgs/libs/hooks/src/Makefile.shared parsec-2.1/pkgs/libs/hooks/src/Makefile.shared
+*** clean/parsec-2.1/pkgs/libs/hooks/src/Makefile.shared	2009-08-11 21:29:04.000000000 -0500
+--- parsec-2.1/pkgs/libs/hooks/src/Makefile.shared	2009-12-08 11:35:37.000000000 -0600
+***************
+*** 9,21 ****
+
+  INCLUDEDIR=include
+  TARGET=libhooks.la
+! OBJS=hooks.lo
+
+
+
+  all: $(OBJS)
+  	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(OBJS) -o $(TARGET) -rpath $(PREFIX)/lib
+
+  %.lo : %.c
+  	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -Wall -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -c $<
+
+--- 9,24 ----
+
+  INCLUDEDIR=include
+  TARGET=libhooks.la
+! OBJS=hooks.lo alpha_m5.lo
+
+
+
+  all: $(OBJS)
+  	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(OBJS) -o $(TARGET) -rpath $(PREFIX)/lib
+
++ %.lo : %.S
++ 	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -Wall -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -c $<
++
+  %.lo : %.c
+  	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -Wall -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -c $<
+
+diff -crB clean/parsec-2.1/pkgs/libs/ssl/src/Configure.pl parsec-2.1/pkgs/libs/ssl/src/Configure.pl
+*** clean/parsec-2.1/pkgs/libs/ssl/src/Configure.pl	2009-02-11 15:04:34.000000000 -0600
+--- parsec-2.1/pkgs/libs/ssl/src/Configure.pl	2009-12-08 11:43:13.000000000 -0600
+***************
+*** 356,361 ****
+--- 356,362 ----
+  #					<appro@fy.chalmers.se>
+  #
+  "linux-alpha-gcc","gcc:-O3 -DL_ENDIAN -DTERMIO::-D_REENTRANT::-ldl:SIXTY_FOUR_BIT_LONG RC4_CHUNK DES_RISC1 DES_UNROLL:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
++ "linux-alpha-alphaev67-unknown-linux-gnu-gcc","alphaev67-unknown-linux-gnu-gcc:-O3 -DL_ENDIAN -DTERMIO::-D_REENTRANT::-ldl:SIXTY_FOUR_BIT_LONG RC4_CHUNK DES_RISC1 DES_UNROLL:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+  "linux-alpha+bwx-gcc","gcc:-O3 -DL_ENDIAN -DTERMIO::-D_REENTRANT::-ldl:SIXTY_FOUR_BIT_LONG RC4_CHAR RC4_CHUNK DES_RISC1 DES_UNROLL:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+  "linux-alpha-ccc","ccc:-fast -readonly_strings -DL_ENDIAN -DTERMIO::-D_REENTRANT:::SIXTY_FOUR_BIT_LONG RC4_CHUNK DES_INT DES_PTR DES_RISC1 DES_UNROLL:${no_asm}",
+  "linux-alpha+bwx-ccc","ccc:-fast -readonly_strings -DL_ENDIAN -DTERMIO::-D_REENTRANT:::SIXTY_FOUR_BIT_LONG RC4_CHAR RC4_CHUNK DES_INT DES_PTR DES_RISC1 DES_UNROLL:${no_asm}",

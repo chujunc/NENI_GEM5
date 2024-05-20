@@ -1,0 +1,18 @@
+#!/bin/bash
+
+ALPHA_FILES=/path/to/alpha/files/TR-09-32-parsec-2.1-alpha-files
+
+PWD=`pwd | tr "/" " " | awk '{print $NF}'`
+
+if [ $PWD != "parsec-2.1" ] ; then
+	echo "Error: this script must be run from the parsec-2.1 directory"
+	exit
+fi
+
+patch -p1 -i $ALPHA_FILES/parsec-2.1-alpha-diffs.patch
+
+echo "Updating SSL Library"
+pushd pkgs/libs/ssl/src >& /dev/null
+mv configure configure.save
+ln -s Configure.pl configure
+popd >& /dev/null

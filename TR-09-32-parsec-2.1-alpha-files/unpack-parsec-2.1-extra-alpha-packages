@@ -1,0 +1,110 @@
+#!/bin/bash
+
+ALPHA_FILES=/path/to/alpha/files/TR-09-32-parsec-2.1-alpha-files
+
+PWD=`pwd | tr "/" " " | awk '{print $NF}'`
+
+if [ $PWD != "pkgs" ] ; then
+	echo "Error: this script must be run from the parsec-2.1/pkgs directory"
+	exit
+fi
+
+tar zxf $ALPHA_FILES/parsec-2.1-extra-alpha-packages.tar.gz
+
+LIBS="parsec-2.1-extra-alpha-packages/inputproto-1.9.99.902-tar.gz
+parsec-2.1-extra-alpha-packages/jpeg-7-tar.gz
+parsec-2.1-extra-alpha-packages/kbproto-1.0.3-tar.gz
+parsec-2.1-extra-alpha-packages/libX11-1.2-tar.gz
+parsec-2.1-extra-alpha-packages/libXau-1.0.5-tar.gz
+parsec-2.1-extra-alpha-packages/libXext-1.0.2-tar.gz
+parsec-2.1-extra-alpha-packages/libXmu-1.0.4-tar.gz
+parsec-2.1-extra-alpha-packages/libpthreadstubs-0.1-tar.gz
+parsec-2.1-extra-alpha-packages/libxcb-1.4-tar.gz
+parsec-2.1-extra-alpha-packages/xextproto-7.1.0-tar.gz
+parsec-2.1-extra-alpha-packages/xproto-7.0.15-tar.gz
+parsec-2.1-extra-alpha-packages/xtrans-1.2.4-tar.gz"
+
+
+TOOLS="parsec-2.1-extra-alpha-packages/xcbproto-1.5-tar.gz"
+
+pushd libs >& /dev/null
+for lib in $LIBS; do
+	DIR=`echo $lib | cut -f 2 -d / | cut -f 1 -d -`
+	mkdir $DIR
+	pushd $DIR >& /dev/null
+	TARFILE=`echo $lib | cut -f 2 -d /`
+	echo "Unpacking $DIR"
+	tar zxf ../../parsec-2.1-extra-alpha-packages/$TARFILE
+	mv * src
+	VERSION=`echo $lib | cut -f 2 -d / | cut -f 2 -d -`
+	echo $VERSION > version
+	popd >& /dev/null
+done
+popd >& /dev/null
+
+pushd tools >& /dev/null
+for tool in $TOOLS; do
+	DIR=`echo $tool | cut -f 2 -d / | cut -f 1 -d -`
+	mkdir $DIR
+	pushd $DIR >& /dev/null
+	TARFILE=`echo $tool | cut -f 2 -d /`
+	echo "Unpacking $DIR"
+	tar zxf ../../parsec-2.1-extra-alpha-packages/$TARFILE
+	mv * src
+	VERSION=`echo $tool | cut -f 2 -d / | cut -f 2 -d -`
+	echo $VERSION > version
+	popd >& /dev/null
+done
+popd >& /dev/null
+
+
+pushd parsec-2.1-extra-alpha-packages >& /dev/null
+echo "Unpacking configuration files"
+tar zxf $ALPHA_FILES/parsec_m5_alpha_config_files.tar.gz
+pushd parsec_m5_alpha_config_files >& /dev/null
+cp parsec.conf ../../../config/.
+cp alpha-gcc-hooks.bldconf ../../../config/.
+cp gcc.bldconf ../../../config/.
+cp -r inputproto/parsec ../../libs/inputproto/.
+cp -r jpeg/parsec ../../libs/jpeg/.
+cp -r kbproto/parsec ../../libs/kbproto/.
+cp -r libX11/parsec ../../libs/libX11/.
+cp -r libXau/parsec ../../libs/libXau/.
+cp -r libXext/parsec ../../libs/libXext/.
+cp -r libXmu/parsec ../../libs/libXmu/.
+cp -r libpthreadstubs/parsec ../../libs/libpthreadstubs/.
+cp -r libxcb/parsec ../../libs/libxcb/.
+cp -r xcbproto/parsec ../../tools/xcbproto/.
+cp -r xextproto/parsec ../../libs/xextproto/.
+cp -r xproto/parsec ../../libs/xproto/.
+cp -r xtrans/parsec ../../libs/xtrans/.
+cp    libtool/parsec/alpha-gcc-hooks.bldconf ../../tools/libtool/parsec/alpha-gcc-hooks.bldconf
+cp    gsl/parsec/alpha-gcc-hooks.bldconf ../../libs/gsl/parsec/alpha-gcc-hooks.bldconf
+cp    x264/parsec/alpha-gcc-hooks.bldconf ../../apps/x264/parsec/alpha-gcc-hooks.bldconf
+cp    imagick/parsec/alpha-gcc-hooks.bldconf ../../libs/imagick/parsec/alpha-gcc-hooks.bldconf
+cp    glib/parsec/alpha-gcc-hooks.bldconf ../../libs/glib/parsec/alpha-gcc-hooks.bldconf
+cp    glib/parsec/alpha.cache ../../libs/glib/parsec/alpha.cache
+cp    glib/parsec/alpha.cache ../../libs/glib/parsec/alpha.cache.backup
+cp    libxml2/parsec/alpha-gcc-hooks.bldconf ../../libs/libxml2/parsec/alpha-gcc-hooks.bldconf
+cp    vips/parsec/alpha-gcc-hooks.bldconf ../../apps/vips/parsec/alpha-gcc-hooks.bldconf
+cp    cmake/parsec/alpha-gcc-hooks.bldconf ../../tools/cmake/parsec/alpha-gcc-hooks.bldconf
+cp    mesa/parsec/alpha-gcc-hooks.bldconf ../../libs/mesa/parsec/alpha-gcc-hooks.bldconf
+cp    mesa/parsec/gcc.bldconf ../../libs/mesa/parsec/gcc.bldconf
+cp    raytrace/parsec/alpha-gcc-hooks.bldconf ../../apps/raytrace/parsec/alpha-gcc-hooks.bldconf
+cp    raytrace/parsec/gcc-pthreads.bldconf ../../apps/raytrace/parsec/gcc-pthreads.bldconf
+cp    bodytrack/parsec/alpha-gcc-hooks.bldconf ../../apps/bodytrack/parsec/alpha-gcc-hooks.bldconf
+cp    ssl/parsec/alpha-gcc-hooks.bldconf ../../libs/ssl/parsec/alpha-gcc-hooks.bldconf
+cp    ssl/parsec/gcc.bldconf ../../libs/ssl/parsec/gcc.bldconf
+cp    ferret/parsec/alpha-gcc-hooks.bldconf ../../apps/ferret/parsec/alpha-gcc-hooks.bldconf
+cp    freqmine/parsec/alpha-gcc-hooks.bldconf ../../apps/freqmine/parsec/alpha-gcc-hooks.bldconf
+cp    hooks/src/alpha_m5.S ../../libs/hooks/src/alpha_m5.S
+cp    hooks/parsec/alpha-gcc-hooks.bldconf ../../libs/hooks/parsec/alpha-gcc-hooks.bldconf
+cp    dedup/parsec/alpha-gcc-hooks.bldconf ../../kernels/dedup/parsec/alpha-gcc-hooks.bldconf
+cp    zlib/parsec/alpha-gcc-hooks.bldconf ../../libs/zlib/parsec/alpha-gcc-hooks.bldconf
+cp    yasm/parsec/alpha-gcc-hooks.bldconf ../../tools/yasm/parsec/alpha-gcc-hooks.bldconf
+
+
+
+popd >& /dev/null
+
+popd >& /dev/null
