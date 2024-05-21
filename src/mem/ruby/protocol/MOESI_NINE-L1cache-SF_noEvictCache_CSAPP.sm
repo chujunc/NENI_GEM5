@@ -111,7 +111,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     Inv,           desc="Invalidations from the directory";
     Inv2,           desc="Invalidations from the directory";
     Inv_sf,        desc="Invalidations from SF";
-    Inv_sf_nd,     desc="Invalidations from SF and no need data";
+    Inv_sf_nnd,     desc="Invalidations from SF and no need data";
     Inv_sf_eci,    desc="Invalidations from SF ECI and no need data";
 
     // Responses
@@ -122,8 +122,8 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     Writeback_Ack,   desc="Writeback O.K. from directory";
     Writeback_Ack_SU,     desc="Writeback O.K. from l2";  //cjc_update2
     Writeback_drop_data,      desc="writeback drop data"; 
-    O_to_S,               desc="O to S";    //cjc_update3
-    PUTO,                 desc="O to S";    //cjc_update3
+
+
     DataFromOwner,        desc="L1 owner send data to IS"; //cjc_update4
     Writeback_Ack_Data,   desc="Writeback O.K. from directory";  //Send writeback ack to L1 requesting data
     Writeback_Nack,  desc="Writeback not O.K. from directory";
@@ -416,8 +416,8 @@ machine(MachineType:L1Cache, "L1 cache protocol")
         } else if (in_msg.Type == CoherenceRequestType:INV_SF) {
           trigger(Event:Inv_sf, in_msg.addr,
                   getCacheEntry(in_msg.addr), TBEs[in_msg.addr]);
-        } else if (in_msg.Type == CoherenceRequestType:INV_SF_ND) {
-          trigger(Event:Inv_sf_nd, in_msg.addr,
+        } else if (in_msg.Type == CoherenceRequestType:INV_SF_NND) {
+          trigger(Event:Inv_sf_nnd, in_msg.addr,
                   getCacheEntry(in_msg.addr), TBEs[in_msg.addr]);
         } else if (in_msg.Type == CoherenceRequestType:INV_SF_ECI) {
           trigger(Event:Inv_sf_eci, in_msg.addr,
@@ -587,7 +587,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     }
   }
 
-  action(dd_issuePUTData, "\dd", desc="Issue PUTO data") {
+  action(dd_issuePUTData, "\dd", desc="Issue PUT data") {
     enqueue(requestNetwork_out, RequestMsg, request_latency) {
       out_msg.addr := address;
       out_msg.Type := CoherenceRequestType:PUT_DATA;
@@ -1230,7 +1230,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     zz_recycleMandatoryQueue;
   }
 
-  transition({M_W, MM_W}, {Inv_sf, Inv_sf_nd}) {
+  transition({M_W, MM_W}, {Inv_sf, Inv_sf_nnd}) {
     z_recycleRequestQueue;
   }
 
@@ -1493,9 +1493,9 @@ machine(MachineType:L1Cache, "L1 cache protocol")
 
   //        I, S, M, MM, SM, OM, SI, OI, SS, MS, MI, II
   //   Inv_sf: S, M, MM, SM, OM, SI, OI, SS, MS, MI, I
-  //Inv_sf_nd: S, X,  X, SM,  X, SI, OI, SS,  X,  X, II, I
+  //Inv_sf_nnd: S, X,  X, SM,  X, SI, OI, SS,  X,  X, II, I
 
-  transition(S, Inv_sf_nd, I) {
+  transition(S, Inv_sf_nnd, I) {
     forward_eviction_to_cpu;
     getS_LruPosition;
     kk_deallocateL1CacheBlock;
@@ -1532,32 +1532,32 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     l_popForwardQueue;
   }
 
-  transition({MM, M}, Inv_sf_nd) {
+  transition({MM, M}, Inv_sf_nnd) {
     l_popForwardQueue;
   }
 
-  transition({SM}, Inv_sf_nd, IM) {
+  transition({SM}, Inv_sf_nnd, IM) {
     forward_eviction_to_cpu;
     l_popForwardQueue;
   }
 
-  transition({OI, SI, II}, Inv_sf_nd, I) {
+  transition({OI, SI, II}, Inv_sf_nnd, I) {
     kk_deallocateL1CacheBlock;
     l_popForwardQueue;
   }
 
-  transition({SS}, Inv_sf_nd, I) {
+  transition({SS}, Inv_sf_nnd, I) {
     forward_eviction_to_cpu;
     kk_deallocateL1CacheBlock;
     s_deallocateTBE;
     l_popForwardQueue;
   }
 
-  transition(I, Inv_sf_nd) {
+  transition(I, Inv_sf_nnd) {
     l_popForwardQueue;
   }
 
-  transition(IS, Inv_sf_nd) {
+  transition(IS, Inv_sf_nnd) {
     l_popForwardQueue;
   }
 

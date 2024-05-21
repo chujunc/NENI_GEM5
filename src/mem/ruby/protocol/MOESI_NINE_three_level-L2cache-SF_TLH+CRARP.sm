@@ -1482,7 +1482,7 @@ machine(MachineType:L2Cache, "Token protocol")
       enqueue( localRequestNetwork_out, RequestMsg, response_latency ) {
         Entry dir_entry := getDirEntry(address);
         out_msg.addr := address;
-        out_msg.Type := CoherenceRequestType:INV_SF_ND;
+        out_msg.Type := CoherenceRequestType:INV_SF_NND;
         out_msg.Requestor := machineID;
         out_msg.RequestorMachine := MachineType:L2Cache;
         out_msg.Destination.addNetDest(getLocalSharers(address));

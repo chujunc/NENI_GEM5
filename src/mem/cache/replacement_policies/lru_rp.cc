@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// Modified by *Charles Chu*, add compareByLastTouchTick and getVictimCRAR
+
 #include "mem/cache/replacement_policies/lru_rp.hh"
 
 #include <cassert>
@@ -80,8 +82,10 @@ LRU::getVictim(const ReplacementCandidates& candidates) const
     ReplaceableEntry* victim = candidates[0];
     for (const auto& candidate : candidates) {
         // Update victim entry if necessary
-        if (std::static_pointer_cast<LRUReplData>(candidate->replacementData)->lastTouchTick <
-                std::static_pointer_cast<LRUReplData>(victim->replacementData)->lastTouchTick) {
+        if (std::static_pointer_cast<LRUReplData>(
+            candidate->replacementData)->lastTouchTick <
+                std::static_pointer_cast<LRUReplData>(
+                    victim->replacementData)->lastTouchTick) {
             victim = candidate;
         }
     }
@@ -89,6 +93,7 @@ LRU::getVictim(const ReplacementCandidates& candidates) const
     return victim;
 }
 
+//begin: add by charles
 bool
 LRU::compareByLastTouchTick(const ReplaceableEntry* a, const ReplaceableEntry* b) 
 {
@@ -99,19 +104,15 @@ LRU::compareByLastTouchTick(const ReplaceableEntry* a, const ReplaceableEntry* b
 ReplaceableEntry*
 LRU::getVictimCRAR(ReplacementCandidates& candidates, int cnt) 
 {
-    // There must be at least one replacement candidate
-    assert(candidates.size() > 0);
+    assert(candidates.size() > 0); // at least one replacement candidate
 
-    // Visit all candidates to find victim
-    //ReplaceableEntry* victim = candidates[0];
-    // Sort candidates by lastTouchTick
-    std::sort(candidates.begin(), candidates.end(), compareByLastTouchTick);
+    std::sort(candidates.begin(), candidates.end(), compareByLastTouchTick); //traverse all candidates to find victim, sort candidates by lastTouchTick
 
-    // The first candidate after sorting will be the victim
-    ReplaceableEntry* victim = candidates[cnt];
+    ReplaceableEntry* victim = candidates[cnt]; //after sorting, the first candidate is the victim
 
     return victim;
 }
+//end: add by charles
 
 std::shared_ptr<ReplacementData>
 LRU::instantiateEntry()

@@ -37,13 +37,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#Contributed by *Charles Chu*
+#*MOESI_NINE_SF.py* has been modified based on *MOESI_CMP_directory.py*
+
 import math
 import m5
 from m5.objects import *
 from m5.defines import buildEnv
 from .Ruby import create_topology, create_directories
 from .Ruby import send_evicts
-
 
 #
 # Declare caches used by the protocol
@@ -108,14 +110,14 @@ def create_system(
             size=options.l1i_size,
             assoc=options.l1i_assoc,
             start_index_bit=block_size_bits,
-            replacement_policy=LRURP(),
+            replacement_policy=LRURP(),  #l1 icache replacement policy
             is_icache=True,
         )
         l1d_cache = L1Cache(
             size=options.l1d_size,
             assoc=options.l1d_assoc,
             start_index_bit=block_size_bits,
-            replacement_policy=LRURP(),
+            replacement_policy=LRURP(),  #l1 dcache replacement policy
             is_icache=False,
         )
 
@@ -184,23 +186,21 @@ def create_system(
         l2_cache = L2Cache(
             size=options.l2_size,
             assoc=options.l2_assoc,
-            replacement_policy=LRURP(),
+            replacement_policy=LRURP(),  #l2 cache replacement policy
             start_index_bit=block_size_bits + l2_bits,
-            #start_index_bit=block_size_bits,
         )
         
-        sf = ProbeFilterMemory(
+        sf = ProbeFilterMemory(     # add soonp filter 
             size=options.sf_size,
             assoc=options.sf_assoc,
             replacement_policy=LRURP(),
             start_index_bit=block_size_bits + l2_bits,
-            #start_index_bit=block_size_bits,
         )
 
         l2_cntrl = L2Cache_Controller(
             version=i,
             L2cache=l2_cache,
-            ProbeFilterMemory = sf,
+            ProbeFilterMemory = sf,  # add soonp filter, use l2 cache controller
             transitions_per_cycle=options.ports,
             ruby_system=ruby_system,
             addr_ranges=l2_addr_ranges[i],

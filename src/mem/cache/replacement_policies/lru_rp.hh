@@ -32,6 +32,8 @@
  * The victim is chosen using the last touch timestamp.
  */
 
+// Modified by *Charles Chu*, add compareByLastTouchTick and getVictimCRAR
+
 #ifndef __MEM_CACHE_REPLACEMENT_POLICIES_LRU_RP_HH__
 #define __MEM_CACHE_REPLACEMENT_POLICIES_LRU_RP_HH__
 

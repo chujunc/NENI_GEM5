@@ -37,6 +37,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#Contributed by *Charles Chu*
+#*MOESI_NINE_SF_Three_Level.py* has been modified based on 
+# *MOESI_NINE_SF.py* and *MESI_Three_Level.py*
+
 import math
 import m5
 from m5.objects import *
@@ -57,7 +61,7 @@ class L2Cache(RubyCache):
     dataAccessLatency = 20
     tagAccessLatency = 20 """
 
-class L0Cache(RubyCache):
+class L0Cache(RubyCache):  #add l0cache, l0->l1, l1->l2, l2->LLC
     dataAccessLatency = 2
     tagAccessLatency = 2
 
@@ -206,7 +210,7 @@ def create_system(
         sysranges.append(bootmem.range)
     for i in range(options.num_l2caches):
         ranges = []
-        for r in sysranges:
+        for r in sysranges:            # r is a range of system addresses
             addr_range = AddrRange(
                 r.start,
                 size=r.size(),
@@ -224,9 +228,8 @@ def create_system(
         l2_cache = L2Cache(
             size=options.l2_size,
             assoc=options.l2_assoc,
-            replacement_policy=LRURP(),
+            replacement_policy=LRURP(),  #l2 cache replacement policy
             start_index_bit=block_size_bits + l2_bits,
-            #start_index_bit=block_size_bits,
         )
         
         sf = ProbeFilterMemory(
@@ -234,13 +237,12 @@ def create_system(
             assoc=options.sf_assoc,
             replacement_policy=LRURP(),
             start_index_bit=block_size_bits + l2_bits,
-            #start_index_bit=block_size_bits,
         )
 
         l2_cntrl = L2Cache_Controller(
             version=i,
             L2cache=l2_cache,
-            ProbeFilterMemory = sf,
+            ProbeFilterMemory = sf,  # add soonp filter, use l2 cache controller
             transitions_per_cycle=options.l2_transitions_per_cycle,
             ruby_system=ruby_system,
             addr_ranges=l2_addr_ranges[i],

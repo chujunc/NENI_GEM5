@@ -39,6 +39,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*Contributed by *Charles Chu*, add cacheAvailForECI, cacheProbeForECI, cacheProbeForCRAR
+GetDcache_Mstate_LruPosition, GetDcache_Sstate_LruPosition, GetIcache_Mstate_LruPosition
+GetIcache_Sstate_LruPosition, profileDcache_Mstate_LruPosition, profileDcache_Sstate_LruPosition,
+profileIcache_Mstate_LruPosition, profileIcache_Sstate_LruPosition
+*/
+
 #include "mem/ruby/structures/CacheMemory.hh"
 
 #include "base/compiler.hh"
@@ -52,7 +58,7 @@
 #include "mem/cache/replacement_policies/weighted_lru_rp.hh"
 #include "mem/ruby/protocol/AccessPermission.hh"
 #include "mem/ruby/system/RubySystem.hh"
-#include "debug/ProtocolTrace.hh"
+#include "debug/ProtocolTrace.hh" //charles: add to debug
 
 namespace gem5
 {

@@ -28,6 +28,8 @@
 Specifies the coherence protocol enum
 """
 
+#Contributed by *Charles Chu*, add MOESI_NINE_SF, MOESI_NINE_SF_Three_Level
+
 from enum import Enum
 
 
@@ -38,11 +40,10 @@ class CoherenceProtocol(Enum):
     GARNET_STANDALONE = 4
     MESI_TWO_LEVEL = 5
     MOESI_CMP_DIRECTORY = 6
-    MOESI_NINE = 7
-    MOESI_NINE_SF = 8
-    MOESI_NINE_SF_Three_Level = 9
-    MOESI_CMP_TOKEN = 10
-    MOESI_AMD_BASE = 11
-    MI_EXAMPLE = 12
-    GPU_VIPER = 13
-    CHI = 14
+    MOESI_NINE_SF = 7
+    MOESI_NINE_SF_Three_Level = 8
+    MOESI_CMP_TOKEN = 9
+    MOESI_AMD_BASE = 10
+    MI_EXAMPLE = 11
+    GPU_VIPER = 12
+    CHI = 13

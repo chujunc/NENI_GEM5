@@ -114,7 +114,7 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
 
     Inv,           desc="Invalidate request from L2 bank";
     Inv_sf,        desc="Invalidations from SF";
-    Inv_sf_nd,     desc="Invalidations from SF and no need data";
+    Inv_sf_nnd,     desc="Invalidations from SF and no need data";
     Inv_sf_eci,    desc="Invalidations from SF ECI and no need data";
 
     L0_Invalidate_Own,  desc="Invalidate line in L0, due to this cache's (L1) requirements";
@@ -393,12 +393,12 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
             }  else {
                 trigger(Event:Inv_sf, in_msg.addr, cache_entry, tbe);
             }
-        } else if (in_msg.Type == CoherenceRequestType:INV_SF_ND) {
+        } else if (in_msg.Type == CoherenceRequestType:INV_SF_NND) {
           if (is_valid(cache_entry) && inL0Cache(cache_entry.CacheState)) {
                 trigger(Event:L0_Invalidate_SF, in_msg.addr,
                         cache_entry, tbe);
             }  else {
-                trigger(Event:Inv_sf_nd, in_msg.addr, cache_entry, tbe);
+                trigger(Event:Inv_sf_nnd, in_msg.addr, cache_entry, tbe);
             }
         } else if (in_msg.Type == CoherenceRequestType:INV_SF_ECI) {
           if (is_valid(cache_entry) && inL0Cache(cache_entry.CacheState)) {
@@ -1423,13 +1423,13 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     n_popResponseQueue;
   }  
 
-  transition(SS, Inv_sf_nd, I) {
+  transition(SS, Inv_sf_nnd, I) {
     getS_LruPosition;
     //ff_deallocateCacheBlock;
     l_popL2RequestQueue;
   }
 
-  transition({MM, M}, Inv_sf_nd) {
+  transition({MM, M}, Inv_sf_nnd) {
     l_popL2RequestQueue;
   }
 
@@ -1461,20 +1461,20 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     l_popL2RequestQueue;
   }
 
-  transition({SM, OM}, Inv_sf_nd, IM) {
+  transition({SM, OM}, Inv_sf_nnd, IM) {
     l_popL2RequestQueue;
   }
 
-  transition({SI, II}, Inv_sf_nd, I) {
+  transition({SI, II}, Inv_sf_nnd, I) {
     s_deallocateTBE;
     l_popL2RequestQueue;
   }
 
-  transition(I, Inv_sf_nd) {
+  transition(I, Inv_sf_nnd) {
     l_popL2RequestQueue;
   }
 
-  transition({IS, IM}, {Inv_sf_nd}) {
+  transition({IS, IM}, {Inv_sf_nnd}) {
     l_popL2RequestQueue;
   }
 
@@ -1726,7 +1726,7 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     z2_stallAndWaitL2Queue;
   }
 
-  transition({S_IL0, M_IL0, E_IL0, MM_IL0, OM_IL0, SM_IL0}, {Inv, Inv_sf, Inv_sf_nd, Inv_sf_eci, Fwd_GETX, Fwd_GETS, Fwd_DMA}) {
+  transition({S_IL0, M_IL0, E_IL0, MM_IL0, OM_IL0, SM_IL0}, {Inv, Inv_sf, Inv_sf_nnd, Inv_sf_eci, Fwd_GETX, Fwd_GETS, Fwd_DMA}) {
     z2_stallAndWaitL2Queue;
   }
 
