@@ -212,7 +212,7 @@ machine(MachineType:L2Cache, "Token protocol")
     // events initiated by this L2
     L2_Replacement,     desc="L2 Replacement", format="!r";
     SF_Replacement,     desc="SF Replacement";
-    SF_Ready,           desc="SF ready";
+    
 
   }
 

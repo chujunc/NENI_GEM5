@@ -21,13 +21,13 @@ include "MOESI_NINE-L1cache-SF.sm";
 //include "MOESI_NINE-L1cache-SF_noEvictCache.sm";
 //include "MOESI_NINE-L1cache-SF_noEvictCache_CSAPP.sm";
 //----------------------------------------------------------------------------------------//
-//include "MOESI_NINE-L2cache-SF.sm";
+include "MOESI_NINE-L2cache-SF.sm";
 //include "MOESI_NINE-L2cache-SF_L2repl.sm";
 //include "MOESI_NINE-L2cache-SF_BiNowait.sm";
 //include "MOESI_NINE-L2cache-SF_V1.sm";
 //include "MOESI_NINE-L2cache-SF_V2.sm";
 //include "MOESI_NINE-L2cache-SF_V2_W1.sm";
-include "MOESI_NINE-L2cache-SF_V2_W3.sm";
+//include "MOESI_NINE-L2cache-SF_V2_W3.sm";
 //include "MOESI_NINE-L2cache-SF_TLH.sm";
 //include "MOESI_NINE-L2cache-SF_ECI.sm";
 //include "MOESI_NINE-L2cache-SF_ECI+CRARP.sm";

@@ -206,7 +206,7 @@ machine(MachineType:L2Cache, "Token protocol")
     SF_Replacement,     desc="SF Replacement";
     SF_Replacement2,     desc="SF Replacement";
     SF_ECI,             desc="SF ECI";
-    SF_Ready,           desc="SF ready";
+    
 
   }
 
