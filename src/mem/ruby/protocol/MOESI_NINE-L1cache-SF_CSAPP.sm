@@ -38,13 +38,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+//Contributed by *Charles Chu*
+//*MOESI_NINE-L1cache-SF_CSAPP.sm* has been created based on *MOESI_NINE-L1cache-SF_ECI_V2.sm* and *MOESI_NINE-L1cache-SF_TLH_V3.sm*
+
 machine(MachineType:L1Cache, "L1 cache protocol")
  : Sequencer * sequencer;
    CacheMemory * L1Icache;
    CacheMemory * L1Dcache;
    Cycles request_latency := 6;
-   Cycles response_data_latency := 6;
-   Cycles response_latency := 6;
+   Cycles response_data_latency := 6;  //charles: use to distinguish response signal or data
+   Cycles response_latency := 6;  //charles: signal
    Cycles use_timeout_latency := 80;
    bool send_evictions;
 
@@ -88,42 +91,41 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     OM, AccessPermission:Read_Only, "SM", desc="Issued GetX, received data";
     SI, AccessPermission:Read_Only, "OI", desc="Issued PutS, waiting for ack";
     OI, AccessPermission:Read_Only, "OI", desc="Issued PutO, waiting for ack";
-    SS, AccessPermission:Read_Only, "SS", desc="Issued PutS, waiting for ack";  //cjc_update5_new
-    OS, AccessPermission:Read_Only, "OS", desc="Issued PutO, waiting for ack";  //cjc_update4
-    MS, AccessPermission:Read_Only, "MS", desc="Issued PutO, waiting for ack";  //cjc_update4
+    SS, AccessPermission:Read_Only, "SS", desc="Issued PUT_DATA, waiting for ack";  //charles: add this Transient States
+    OS, AccessPermission:Read_Only, "OS", desc="Issued PUT_DATA, waiting for ack";  //charles: add this Transient States
+    MS, AccessPermission:Read_Only, "MS", desc="Issued PUT_DATA, waiting for ack";  //charles: add this Transient States
     MI, AccessPermission:Read_Write, "MI", desc="Issued PutX, waiting for ack";
     II, AccessPermission:Busy, "II", desc="Issued PutX/O, saw Fwd_GETS or Fwd_GETX, waiting for ack";
   }
 
   // EVENTS
   enumeration(Event, desc="Cache events") {
-    Load,            desc="Load request from the processor";
-    Ifetch,          desc="I-fetch request from the processor";
-    Store,           desc="Store request from the processor";
+    Load,            desc="Load request from the processor"; //charles: "pocessor" means the "local core"
+    Ifetch,          desc="I-fetch request from the processor"; //charles: "pocessor" means the "local core"
+    Store,           desc="Store request from the processor"; //charles: "pocessor" means the "local core"
     L1_Replacement,  desc="Replacement";
 
     // Requests
     Own_GETX,      desc="We observe our own GetX forwarded back to us";
-    Fwd_GETX,      desc="A GetX from another processor";
-    Fwd_GETS,      desc="A GetS from another processor";
-    Glo_GETS,      desc="A GetS from another processor global";
+    Fwd_GETX,      desc="A GetX from another processor"; //charles: "another pocessor" means the "remote core, but in the same cluster which shares the LLC"
+    Fwd_GETS,      desc="A GetS from another processor"; //charles: "another pocessor" means the "remote core, but in the same cluster which shares the LLC"
+    Glo_GETS,      desc="A GetS from another cluster global";  //charles: request from another cluster, actually not use, only one cluster with 8 cores in the experiment
     Fwd_DMA,      desc="A GetS from another processor";
     Inv,           desc="Invalidations from the directory";
-    Inv_sf,        desc="Invalidations from SF";
-    Inv_sf_nnd,     desc="Invalidations from SF and no need data";
-
+    Inv2,           desc="Invalidations from the directory";
+    Inv_sf,        desc="Invalidations from Snoop Filter and need data to write back";  //charles: add this EVENTS
+    Inv_sf_nnd,     desc="Invalidations from Snoop Filter and not need data to write back"; //charles: add this EVENTS
+    Inv_sf_eci,    desc="Invalidations from SF ECI and no need data"; //charles: add this EVENTS
     // Responses
     Ack,             desc="Received an ack message";
     Data,            desc="Received a data message, responder has a shared copy";
     Exclusive_Data,  desc="Received a data message";
 
     Writeback_Ack,   desc="Writeback O.K. from directory";
-    Writeback_Ack_SU,     desc="Writeback O.K. from l2";  //cjc_update2
-    Writeback_drop_data,      desc="writeback drop data"; 
-
-
-    DataFromOwner,        desc="L1 owner send data to IS"; //cjc_update4
-    Writeback_Ack_Data,   desc="Writeback O.K. from directory";  //Send writeback ack to L1 requesting data
+    Writeback_Ack_SU,     desc="Writeback O.K. from l2";  //charles: add this EVENTS, l2 means llc, it's two-level cache system
+    Writeback_drop_data,      desc="writeback drop data"; //charles: add this EVENTS
+    DataFromOwner,        desc="L1 owner send data to IS"; //charles: add this EVENTS
+    Writeback_Ack_Data,   desc="Writeback O.K. from directory";  //charles: Send ack to tell L1 write back data
     Writeback_Nack,  desc="Writeback not O.K. from directory";
 
     // Triggers
@@ -140,6 +142,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     State CacheState,        desc="cache state";
     bool Dirty,              desc="Is the data dirty (different than memory)?";
     DataBlock DataBlk,       desc="data for the block";
+    int CountSetMruNum,  default="0",     desc="A Counter to determine when to send synchronization signal to LLC ";
   }
 
   // TBE fields
@@ -214,7 +217,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     }
   }
 
-  Cycles cacheResponseDataLatency() {
+  Cycles cacheResponseDataLatency() {  //charles: use to distinguish response signal or data
       if (L1Dcache.getTagLatency() > response_data_latency) {
       return L1Dcache.getTagLatency();
     } else {
@@ -351,7 +354,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
         } else if (in_msg.Type == CoherenceResponseType:DATA) {
           trigger(Event:Data, in_msg.addr,
                   getCacheEntry(in_msg.addr), TBEs[in_msg.addr]);
-        } else if (in_msg.Type == CoherenceResponseType:DATA_OtoS) {  //cjc_update4
+        } else if (in_msg.Type == CoherenceResponseType:DATA_OtoS) {  //charles adds: data from remote L1
           trigger(Event:DataFromOwner, in_msg.addr,
                   getCacheEntry(in_msg.addr), TBEs[in_msg.addr]);
         } else if (in_msg.Type == CoherenceResponseType:DATA_EXCLUSIVE) {
@@ -360,10 +363,10 @@ machine(MachineType:L1Cache, "L1 cache protocol")
         } else if (in_msg.Type == CoherenceResponseType:WB_ACK) {
           trigger(Event:Writeback_Ack, in_msg.addr,
                   getCacheEntry(in_msg.addr), TBEs[in_msg.addr]);
-        } else if (in_msg.Type == CoherenceResponseType:WB_DROP_DATA) {  //cjc_update4
+        } else if (in_msg.Type == CoherenceResponseType:WB_DROP_DATA) {  //charles adds: no need wb data to l2
           trigger(Event:Writeback_drop_data, in_msg.addr,
                   getCacheEntry(in_msg.addr), TBEs[in_msg.addr]);
-        } else if (in_msg.Type == CoherenceResponseType:WB_ACK_SU) {  //cjc_update2
+        } else if (in_msg.Type == CoherenceResponseType:WB_ACK_SU) {  //charles adds this event
           trigger(Event:Writeback_Ack_SU, in_msg.addr,
                   getCacheEntry(in_msg.addr), TBEs[in_msg.addr]);
         } else if (in_msg.Type == CoherenceResponseType:WB_ACK_DATA) {
@@ -398,7 +401,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
         } else if (in_msg.Type == CoherenceRequestType:GETS) {
           trigger(Event:Fwd_GETS, in_msg.addr,
                   getCacheEntry(in_msg.addr), TBEs[in_msg.addr]);
-        } else if (in_msg.Type == CoherenceRequestType:GLO_GETS) {
+        } else if (in_msg.Type == CoherenceRequestType:GLO_GETS) {  //charles adds this event, actually not use "Glo_GETS"
           trigger(Event:Glo_GETS, in_msg.addr,
                   getCacheEntry(in_msg.addr), TBEs[in_msg.addr]);
         } else if (in_msg.Type == CoherenceRequestType:DMA_READ) {
@@ -407,11 +410,17 @@ machine(MachineType:L1Cache, "L1 cache protocol")
         } else if (in_msg.Type == CoherenceRequestType:INV) {
           trigger(Event:Inv, in_msg.addr,
                   getCacheEntry(in_msg.addr), TBEs[in_msg.addr]);
-        } else if (in_msg.Type == CoherenceRequestType:INV_SF) {
+        } else if (in_msg.Type == CoherenceRequestType:INV2) {   //charles adds this event
+          trigger(Event:Inv2, in_msg.addr,
+                  getCacheEntry(in_msg.addr), TBEs[in_msg.addr]);
+        } else if (in_msg.Type == CoherenceRequestType:INV_SF) {  //charles adds this event
           trigger(Event:Inv_sf, in_msg.addr,
                   getCacheEntry(in_msg.addr), TBEs[in_msg.addr]);
-        } else if (in_msg.Type == CoherenceRequestType:INV_SF_NND) {
+        } else if (in_msg.Type == CoherenceRequestType:INV_SF_NND) {  //charles adds this event
           trigger(Event:Inv_sf_nnd, in_msg.addr,
+                  getCacheEntry(in_msg.addr), TBEs[in_msg.addr]);
+        } else if (in_msg.Type == CoherenceRequestType:INV_SF_ECI) { //charles adds this event
+          trigger(Event:Inv_sf_eci, in_msg.addr,
                   getCacheEntry(in_msg.addr), TBEs[in_msg.addr]);
         } else {
           error("Unexpected message");
@@ -502,6 +511,25 @@ machine(MachineType:L1Cache, "L1 cache protocol")
 
 
   // ACTIONS
+  action(a_issueSFsetMru, "asf", desc="Issue set SF mru") {
+    if(cache_entry.CountSetMruNum==16){ 
+      peek(mandatoryQueue_in, RubyRequest) {
+        enqueue(requestNetwork_out, RequestMsg,  request_latency) {
+          out_msg.addr := address;
+          out_msg.Type := CoherenceRequestType:SFsetMru;
+          out_msg.Requestor := machineID;
+          out_msg.RequestorMachine := MachineType:L1Cache;
+          out_msg.Destination.add(mapAddressToMachine(address,
+                                                    MachineType:L2Cache));
+          out_msg.MessageSize := MessageSizeType:Request_Control;
+        }
+      }
+      cache_entry.CountSetMruNum := 0;
+    }
+    else {
+      cache_entry.CountSetMruNum := cache_entry.CountSetMruNum+1;
+    }
+  }
 
   action(a_issueGETS, "a", desc="Issue GETS") {
     peek(mandatoryQueue_in, RubyRequest) {
@@ -559,6 +587,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     }
   }
 
+  //charles adds: issue data write back requests to l2 
   action(dd_issuePUTData, "\dd", desc="Issue PUT data") {
     enqueue(requestNetwork_out, RequestMsg, request_latency) {
       out_msg.addr := address;
@@ -620,7 +649,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     }
   }
 
-  action(e_sendDataToL2, "e2", desc="Send data from cache to L2") {
+  /* action(e_sendDataToL2, "e2", desc="Send data from cache to L2") {
     peek(requestNetwork_in, RequestMsg) {
       assert(is_valid(cache_entry));
         enqueue(responseNetwork_out, ResponseMsg, cacheResponseDataLatency()) {
@@ -638,9 +667,10 @@ machine(MachineType:L1Cache, "L1 cache protocol")
         }
         DPRINTF(RubySlicc, "Sending data to L2: %#x\n", in_msg.addr);
     }
-  }
+  } */
 
-  action(e_sendDataFromOwner, "eos", desc="Send data from cache to requestor") {  //cjc_update4
+  //charles adds: issue data to requestor as the owner
+  action(e_sendDataFromOwner, "eos", desc="Send data from cache to requestor") {
     peek(requestNetwork_in, RequestMsg) {
       assert(is_valid(cache_entry));
       if (in_msg.RequestorMachine == MachineType:L2Cache) {
@@ -752,7 +782,20 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     }
   }
 
-  action(g_sendUnblockO, "go", desc="Send unblock to memory") {  //cjc_update4
+  action(g_sendUnblockECI, "geci", desc="Send unblock to memory") {
+    enqueue(responseNetwork_out, ResponseMsg, response_latency) {
+      out_msg.addr := address;
+      out_msg.Type := CoherenceResponseType:UNBLOCK_ECI;
+      out_msg.Sender := machineID;
+      out_msg.SenderMachine := MachineType:L1Cache;
+      out_msg.Destination.add(mapAddressToMachine(address,
+                                                  MachineType:L2Cache));
+      out_msg.MessageSize := MessageSizeType:Unblock_Control;
+    }
+  }
+
+  //charles adds: send unblock to l2
+  action(g_sendUnblockO, "go", desc="Send unblock") {  
     enqueue(responseNetwork_out, ResponseMsg, response_latency) {
       out_msg.addr := address;
       out_msg.Type := CoherenceResponseType:UNBLOCK_O;
@@ -926,6 +969,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     }
   }
 
+  //charles adds: issue data to requestor as the owner
   action(q_sendDataFromTBEToCacheFromOwner, "qo", desc="Send data from TBE to cache") {
     peek(requestNetwork_in, RequestMsg) {
       assert(is_valid(tbe));
@@ -1014,24 +1058,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     }
   }
 
-  action(qq_sendWBDataFromL1ToL2, "\ql1", desc="Send data from TBE to L2") {
-    enqueue(requestNetwork_out, RequestMsg, request_latency) {
-      assert(is_valid(cache_entry));
-      out_msg.addr := address;
-      out_msg.Requestor := machineID;
-      out_msg.RequestorMachine := MachineType:L1Cache;
-      out_msg.Destination.add(mapAddressToMachine(address,
-                                                  MachineType:L2Cache));
-      if (cache_entry.Dirty) {
-        out_msg.Type := CoherenceRequestType:WRITEBACK_DIRTY_DATA;
-      } else {
-        out_msg.Type := CoherenceRequestType:WRITEBACK_CLEAN_DATA;
-      }
-      out_msg.DataBlk := cache_entry.DataBlk;
-      out_msg.MessageSize := MessageSizeType:Writeback_Data;
-    }
-  }
-
+  //charles adds: send data to l2 caused by the back invalidation of sf
   action(qq_sendWBDataFromTBEToL2CausedbySF, "\qsf", desc="Send data from TBE to L2 caused by SF") {
     enqueue(requestNetwork_out, RequestMsg, request_latency) {
       assert(is_valid(tbe));
@@ -1050,7 +1077,8 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     }
   }
 
-  action(qq_sendWBDataFromTBEToL2AndDrop, "\qd", desc="Send data from TBE to L2 and drop") {  //cjc_update3
+  //charles adds: send data to l2 caused by the back invalidation of sf, but l2 drop the data
+  action(qq_sendWBDataFromTBEToL2AndDrop, "\qd", desc="Send data from TBE to L2 and drop") {  
     enqueue(requestNetwork_out, RequestMsg, request_latency) {
       assert(is_valid(tbe));
       out_msg.addr := address;
@@ -1064,24 +1092,6 @@ machine(MachineType:L1Cache, "L1 cache protocol")
         out_msg.Type := CoherenceRequestType:WRITEBACK_CLEAN_DATA_DROP;
       }
       out_msg.DataBlk := tbe.DataBlk;
-      out_msg.MessageSize := MessageSizeType:Writeback_Data;
-    }
-  }
-
-  action(qq_sendWBDataFromL1ToL2AndDrop, "\qdl1", desc="Send data from TBE to L2 and drop") {  //cjc_update3
-    enqueue(requestNetwork_out, RequestMsg, request_latency) {
-      assert(is_valid(cache_entry));
-      out_msg.addr := address;
-      out_msg.Requestor := machineID;
-      out_msg.RequestorMachine := MachineType:L1Cache;
-      out_msg.Destination.add(mapAddressToMachine(address,
-                                                  MachineType:L2Cache));
-      if (cache_entry.Dirty) {
-        out_msg.Type := CoherenceRequestType:WRITEBACK_DIRTY_DATA_DROP;
-      } else {
-        out_msg.Type := CoherenceRequestType:WRITEBACK_CLEAN_DATA_DROP;
-      }
-      out_msg.DataBlk := cache_entry.DataBlk;
       out_msg.MessageSize := MessageSizeType:Writeback_Data;
     }
   }
@@ -1112,6 +1122,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     unset_cache_entry();
   }
 
+  //charles adds: get the lru position of exclusive state l1 cacheline when it get back inv
   action(getM_LruPosition, "\glpM", desc="get the information lru position of l1 cacheline") {
     int lru_position := 0;
     DPRINTF(ProtocolTrace, "cache entry state: %s\n", cache_entry.CacheState);
@@ -1123,6 +1134,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     DPRINTF(ProtocolTrace, "Lru position: %d\n", lru_position);
   }
 
+  //charles adds: get the lru position of shared state l1 cacheline when it get back inv
   action(getS_LruPosition, "\glpS", desc="get the information lru position of l1 cacheline") {
     int lru_position := 0;
     DPRINTF(ProtocolTrace, "cache entry state: %s\n", cache_entry.CacheState);
@@ -1190,11 +1202,11 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     zz_recycleMandatoryQueue;
   }
 
-  transition({M_W, MM_W}, {Inv_sf, Inv_sf_nnd}) {
+  transition({M_W, MM_W}, {Inv_sf, Inv_sf_nnd}) { //charles adds this transition
     z_recycleRequestQueue;
   }
 
-  transition({M_W, MM_W}, {Fwd_GETS, Glo_GETS, Fwd_DMA, Fwd_GETX, Own_GETX, Inv}) {
+  transition({M_W, MM_W}, {Fwd_GETS, Glo_GETS, Fwd_DMA, Fwd_GETX, Own_GETX, Inv, Inv2}) {
     z_recycleRequestQueue;
   }
 
@@ -1236,6 +1248,10 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     l_popForwardQueue;
   }
 
+  transition(I, Inv2) {
+    l_popForwardQueue;
+  }
+
   transition({S, SM, SS, MS, OS, O, OM, MM, MM_W, M, M_W}, Load) {
     h_load_hit;
     uu_profileDataHit;
@@ -1256,12 +1272,15 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     k_popMandatoryQueue;
   }
 
-  transition(S, L1_Replacement, SI) {   //cjc_update2: whether drop silent, don't send message to l2cache? can't, need notice l2 to update local_dir, but we can
-    //straightly update local_dir instead of waiting an ack between l1 and l2.  SI
-    //i_allocateTBE;
+  /*charles: whether could drop silently and don't send message to l2? 
+  can't, need notice l2 to update sf, but maybe we could
+  straightly update local_dir instead of waiting an ack between l1 and l2. 
+  */
+  transition(S, L1_Replacement, SI) { 
+    i_allocateTBE;
     dd_issuePUTS;
     forward_eviction_to_cpu;
-    //kk_deallocateL1CacheBlock;
+    kk_deallocateL1CacheBlock;
   }
 
   transition(S, Inv, I) {
@@ -1270,42 +1289,46 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     l_popForwardQueue;
   }
 
+  transition(S, Inv2, I) {
+    forward_eviction_to_cpu;
+    l_popForwardQueue;
+  }
+
   transition(S, Glo_GETS) {
-    //e_sendData;
     e_sendDataFromOwner;
     l_popForwardQueue;
   }
 
+  //charles modifies this transition: response to requestor while issue put data request to l2
   transition(S, Fwd_GETS, SS) {
     e_sendData;
-    //e_sendDataFromOwner;
-    //e_sendDataToL1;
-    //e_sendDataToL2;
     i_allocateTBE;
     dd_issuePUTData;
     l_popForwardQueue;
   }
 
+  //charles adds this transition: occurred when data not wb to l2 but received the request
   transition(SS, Fwd_GETS) {
     e_sendData;
-    //e_sendDataFromOwner;
     l_popForwardQueue;
   }
 
+  //charles adds this transition: get l2 response, wb data to l2
   transition(SS, Writeback_Ack_Data, S) {
-    //e_sendDataToL2;  // always send data
     qq_sendWBDataFromTBEToL2;
     s_deallocateTBE;
     n_popResponseQueue;
   }
 
+  //charles adds this transition: get l2 response, don't wb data to l2
   transition(SS, Writeback_drop_data, S) {
     s_deallocateTBE;
     n_popResponseQueue;
   }
 
+  //charles adds this transition: get l2 response, wb data to l2
   transition(SM, Writeback_Ack_Data) {
-    qq_sendWBDataFromTBEToL2;  // always send data
+    qq_sendWBDataFromTBEToL2;
     n_popResponseQueue;
   } 
 
@@ -1328,10 +1351,10 @@ machine(MachineType:L1Cache, "L1 cache protocol")
   }
 
   transition(O, L1_Replacement, OI) {
-    //i_allocateTBE;
+    i_allocateTBE;
     dd_issuePUTO;
     forward_eviction_to_cpu;
-    //kk_deallocateL1CacheBlock;
+    kk_deallocateL1CacheBlock;
   }
 
   transition(O, Fwd_GETX, I) {
@@ -1340,16 +1363,17 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     l_popForwardQueue;
   }
 
-  transition(O, Fwd_GETS, OS) {  //cjc_update5
+  //charles adds this transition: response to requestor while issue put data request to l2
+  transition(O, Fwd_GETS, OS) {
     e_sendDataFromOwner;
     i_allocateTBE;
     dd_issuePUTData;
-    l_popForwardQueue;
-    
+    l_popForwardQueue;    
   }
 
-  transition(OS, Writeback_Ack_Data, S) {  //cjc_update5
-    qq_sendWBDataFromTBEToL2;  // always send data
+  //charles adds this transition: get l2 response, don't wb data to l2
+  transition(OS, Writeback_Ack_Data, S) {
+    qq_sendWBDataFromTBEToL2;
     s_deallocateTBE;
     n_popResponseQueue;
   }  
@@ -1361,34 +1385,40 @@ machine(MachineType:L1Cache, "L1 cache protocol")
   }
 
   // Transitions from MM
-  transition({MM, MM_W}, Store) {
+  transition({MM_W}, Store) {
     hh_store_hit;
     uu_profileDataHit;
     k_popMandatoryQueue;
   }
 
-  transition(MM, L1_Replacement, MI) {
-    //i_allocateTBE;
-    d_issuePUTX;
-    forward_eviction_to_cpu;
-    //kk_deallocateL1CacheBlock;
+  transition({MM}, Store) {
+    hh_store_hit;
+    uu_profileDataHit;
+    a_issueSFsetMru;
+    k_popMandatoryQueue;
   }
 
+  transition(MM, L1_Replacement, MI) {
+    i_allocateTBE;
+    d_issuePUTX;
+    forward_eviction_to_cpu;
+    kk_deallocateL1CacheBlock;
+  }
+
+  //charles adds these transitions: l1 get back inv from sf, Inv_sf: need wb data
   transition({MM, M}, Inv_sf, I) {
     i_allocateTBE;
-    //d_issuePUTX;
-    qq_sendWBDataFromTBEToL2CausedbySF;  // always send data
+    qq_sendWBDataFromTBEToL2CausedbySF;  //need data: always send data to l2
     s_deallocateTBE;
-    forward_eviction_to_cpu;
-    getM_LruPosition;
-    kk_deallocateL1CacheBlock;
+    forward_eviction_to_cpu; // invalid to core
+    getM_LruPosition;  // get the lru position of the cacheline 
+    kk_deallocateL1CacheBlock;  // deallocate the cacheline in l1
     l_popForwardQueue;
   }
 
   transition(S, Inv_sf, I) {
     i_allocateTBE;
-    //d_issuePUTX;
-    qq_sendWBDataFromTBEToL2CausedbySF;  // always send data
+    qq_sendWBDataFromTBEToL2CausedbySF;  //need data: always send data to l2
     s_deallocateTBE;
     forward_eviction_to_cpu;
     getS_LruPosition;
@@ -1418,7 +1448,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     l_popForwardQueue;
   }
 
-  transition({SS, MS}, Inv, I) {
+  transition({SS, MS}, {Inv, Inv2}, I) {
     qq_sendWBDataFromTBEToL2;
     s_deallocateTBE;
     forward_eviction_to_cpu;
@@ -1435,14 +1465,39 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     n_popResponseQueue;
   }  
 
-  //        I, S, M, MM, SM, OM, SI, OI, SS, MS, MI, II
-  //   Inv_sf: S, M, MM, SM, OM, SI, OI, SS, MS, MI, I
-  //Inv_sf_nnd: S, X,  X, SM,  X, SI, OI, SS,  X,  X, II, I
-
+  //charles adds these transitions: l1 get back inv from sf, Inv_sf_nnd: not need wb data
   transition(S, Inv_sf_nnd, I) {
     forward_eviction_to_cpu;
     getS_LruPosition;
     kk_deallocateL1CacheBlock;
+    l_popForwardQueue;
+  }
+
+  transition(S, Inv_sf_eci, I) {
+    getS_LruPosition;
+    forward_eviction_to_cpu;
+    kk_deallocateL1CacheBlock;
+    g_sendUnblockECI;
+    l_popForwardQueue;
+  }
+
+  transition({SI, II}, Inv_sf_eci, I) {
+    s_deallocateTBE;
+    g_sendUnblockECI;
+    l_popForwardQueue;
+  }
+
+  transition(SM, Inv_sf_eci, IM) {
+    forward_eviction_to_cpu;
+    g_sendUnblockECI;
+    l_popForwardQueue;
+  }
+
+  transition(I, Inv_sf_eci, I) {
+    l_popForwardQueue;
+  }
+
+  transition({IM, IS}, Inv_sf_eci) {
     l_popForwardQueue;
   }
 
@@ -1456,7 +1511,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
   }
 
   transition({OI, SI, II}, Inv_sf_nnd, I) {
-    kk_deallocateL1CacheBlock;
+    s_deallocateTBE;
     l_popForwardQueue;
   }
 
@@ -1481,7 +1536,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     l_popForwardQueue;
   }
 
-  /* transition(MM, {Fwd_GETS}, I) {   //why not to O or S?
+  /* transition(MM, {Fwd_GETS}, I) {
     ee_sendDataExclusive;
     forward_eviction_to_cpu;
     l_popForwardQueue;
@@ -1514,10 +1569,10 @@ machine(MachineType:L1Cache, "L1 cache protocol")
   }
 
   transition(M, L1_Replacement, MI) {
-    //i_allocateTBE;
+    i_allocateTBE;
     d_issuePUTX;
     forward_eviction_to_cpu;
-    //kk_deallocateL1CacheBlock;
+    kk_deallocateL1CacheBlock;
   }
 
   transition(M, Fwd_GETX, I) {
@@ -1526,7 +1581,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     l_popForwardQueue;
   }
 
-
+  //charles modifies this transition: response to requestor while issue put data request to l2
   transition(M, Fwd_GETS, MS) {
     e_sendDataFromOwner;
     i_allocateTBE;
@@ -1534,7 +1589,8 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     l_popForwardQueue;
   }
 
-  transition(MS, Writeback_Ack_Data, S) {  //cjc_update3
+  //charles adds this transition: get l2 response, wb data to l2
+  transition(MS, Writeback_Ack_Data, S) {
     qq_sendWBDataFromTBEToL2;  // always send data
     s_deallocateTBE;
     n_popResponseQueue;
@@ -1550,6 +1606,10 @@ machine(MachineType:L1Cache, "L1 cache protocol")
 
   transition(IM, Inv) {
     f_sendAck;
+    l_popForwardQueue;
+  }
+
+  transition(IM, Inv2) {
     l_popForwardQueue;
   }
 
@@ -1573,6 +1633,11 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     l_popForwardQueue;
   }
 
+  transition(SM, Inv2, IM) {
+    forward_eviction_to_cpu;
+    l_popForwardQueue;
+  }
+
   transition(SM, Ack) {
     m_decrementNumberOfMessages;
     o_checkForCompletion;
@@ -1586,15 +1651,14 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     n_popResponseQueue;
   }
 
+  //charles modifies this transition: response to requestor while issue put data request to l2
   transition(SM, Fwd_GETS) {
     e_sendData;
-    //e_sendDataFromOwner;
     dd_issuePUTData;
     l_popForwardQueue;
   }
 
   transition(SM, Glo_GETS) {
-    //e_sendData;
     e_sendDataFromOwner;
     l_popForwardQueue;
   }
@@ -1612,6 +1676,11 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     l_popForwardQueue;
   }
   
+  transition(IM, Own_GETX) {
+    mm_decrementNumberOfMessages;
+    o_checkForCompletion;
+    l_popForwardQueue;
+  }  
 
   // transition(OM, Fwd_GETX, OMF) {
   transition(OM, Fwd_GETX, IM) {
@@ -1620,22 +1689,21 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     l_popForwardQueue;
   }
 
-  transition(OM, Fwd_GETS) {  //cjc_update5
-    //e_sendData;
+  //charles modifies this transition: response to requestor while issue put data request to l2
+  transition(OM, Fwd_GETS) {
     e_sendDataFromOwner;
     dd_issuePUTData;
     l_popForwardQueue;
   }
 
   transition(OM, Glo_GETS) {
-    //e_sendData;
     e_sendDataFromOwner;
     l_popForwardQueue;
   }
 
-  transition(OM, Writeback_Ack_Data, SM) {  //cjc_update5
-    qq_sendWBDataFromTBEToL2;  // always send data
-    //s_deallocateTBE;
+  //charles modifies this transition: get l2 response, wb data to l2, l2 to be the owner
+  transition(OM, Writeback_Ack_Data, SM) {
+    qq_sendWBDataFromTBEToL2;
     n_popResponseQueue;
   }  
 
@@ -1671,6 +1739,10 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     l_popForwardQueue;
   }
 
+  transition(IS, Inv2) {
+    l_popForwardQueue;
+  }
+
   transition(IS, Data, S) {
     u_writeDataToCache;
     m_decrementNumberOfMessages;
@@ -1680,7 +1752,8 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     n_popResponseQueue;
   }
 
-  transition(IS, DataFromOwner, S) {  //cjc_update4
+  //charles adds this transition: l1 get data from other l1
+  transition(IS, DataFromOwner, S) {
     u_writeDataToCache;
     m_decrementNumberOfMessages;
     hx_load_hit;
@@ -1710,70 +1783,74 @@ machine(MachineType:L1Cache, "L1 cache protocol")
     l_popForwardQueue;
   }  */
 
+  //charles modifies this transition: response to requestor while issue put data request to l2
   transition(MI, Fwd_GETS) {
-    e_sendDataFromOwner;
+    q_sendDataFromTBEToCacheFromOwner;
     dd_issuePUTData;
     l_popForwardQueue;
   }
 
-  transition(MI, Writeback_Ack_Data, I) {  //cjc_update3
-    qq_sendWBDataFromL1ToL2AndDrop;  // always send data
-    kk_deallocateL1CacheBlock;
+  transition(MI, Writeback_Ack_Data, I) {
+    qq_sendWBDataFromTBEToL2AndDrop;
+    s_deallocateTBE;
     n_popResponseQueue;
   }  
 
   transition(MI, Fwd_DMA) {
-    e_sendData;
+    q_sendDataFromTBEToCache;
     ub_dmaUnblockL2Cache;
     l_popForwardQueue;
   }
 
   transition(MI, Fwd_GETX, II) {
-    ee_sendDataExclusive;
+    q_sendExclusiveDataFromTBEToCache;
     l_popForwardQueue;
   }
 
+  //charles modifies this transition: response to requestor while issue put data request to l2
   transition({OI}, {Fwd_GETS, Glo_GETS}) {
-    e_sendDataFromOwner;
+    q_sendDataFromTBEToCacheFromOwner;
     dd_issuePUTData;
     l_popForwardQueue;
   }
 
+  //charles modifies this transition: response to requestor while issue put data request to l2
   transition({SI}, {Fwd_GETS, Glo_GETS}) {
-    e_sendData;
+    q_sendDataFromTBEToCache;
     dd_issuePUTData;
     l_popForwardQueue;
   }
 
   transition({SI, OI}, Fwd_DMA) {
-    e_sendData;
+    q_sendDataFromTBEToCache;
     ub_dmaUnblockL2Cache;
     l_popForwardQueue;
   }
 
   transition(OI, Fwd_GETX, II) {
-    ee_sendDataExclusive;
+    q_sendExclusiveDataFromTBEToCache;
     l_popForwardQueue;
   }
 
   transition({SI, OI}, Writeback_Ack_Data, I) {   
-    qq_sendWBDataFromL1ToL2;  // always send data
-    kk_deallocateL1CacheBlock;
+    qq_sendWBDataFromTBEToL2;  // always send data
+    s_deallocateTBE;
     n_popResponseQueue;
   }
 
-  transition({SI, OI, MI}, Writeback_Ack_SU, I) {  //cjc_update2
-    kk_deallocateL1CacheBlock;
+  //charles adds thess transitions: don't need wb data to l2
+  transition({SI, OI, MI}, Writeback_Ack_SU, I) {  
+    s_deallocateTBE;
     n_popResponseQueue;
   }
 
-  transition(I, Writeback_Ack_SU) {  //cjc_update2
+  transition(I, Writeback_Ack_SU) {
     n_popResponseQueue;
   }
 
   transition({SI, OI, MI}, Writeback_Ack, I) {
     g_sendUnblock;
-    kk_deallocateL1CacheBlock;
+    s_deallocateTBE;
     n_popResponseQueue;
   }
 
@@ -1787,18 +1864,17 @@ machine(MachineType:L1Cache, "L1 cache protocol")
   // Transitions from II
   transition(II, {Writeback_Ack, Writeback_Ack_Data}, I) {
     g_sendUnblock;
-    kk_deallocateL1CacheBlock;
+    s_deallocateTBE;
     n_popResponseQueue;
   }
 
   // transition({II, SI}, Writeback_Nack, I) {
   transition(II, Writeback_Nack, I) {
-    kk_deallocateL1CacheBlock;
+    s_deallocateTBE;
     n_popResponseQueue;
   }
 
   transition({I, IS, IM}, Writeback_Nack) {
-    //s_deallocateTBE;
     n_popResponseQueue;
   }
 
@@ -1814,6 +1890,14 @@ machine(MachineType:L1Cache, "L1 cache protocol")
 
   transition(SI, Inv, II) {
     f_sendAck;
+    l_popForwardQueue;
+  }
+
+  transition(II, Inv2) {
+    l_popForwardQueue;
+  }
+
+  transition(SI, Inv2, II) {
     l_popForwardQueue;
   }
 }

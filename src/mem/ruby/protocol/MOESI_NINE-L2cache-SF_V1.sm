@@ -39,11 +39,11 @@
  */
 
 //Contributed by *Charles Chu*
-//*MOESI_NINE-L2cache-SF.sm* has been created based on *MOESI_CMP_directory-L2cache.sm*
+//*MOESI_NINE-L2cache-SF_V1.sm* has been created based on *MOESI_NINE-L2cache-SF.sm*
 
 machine(MachineType:L2Cache, "Token protocol")
 : CacheMemory * L2cache;
-  CacheMemory * ProbeFilterMemory; //charles adds: ProbeFilterMemory is smoop filter
+  CacheMemory * ProbeFilterMemory; //charles adds: ProbeFilterMemory is snoop filter
   Cycles response_latency := 6;
   Cycles request_latency := 6;
 
@@ -1353,7 +1353,7 @@ machine(MachineType:L2Cache, "Token protocol")
     }
   }
 
-  action(g_recordLocalSharerFromL1request, "\no", desc="Record new local owner from unblock message") {  //cjc_update4
+  action(g_recordLocalSharerFromL1request, "\no", desc="Record new local owner from unblock message") {  
     peek(L1requestNetwork_in, RequestMsg) {
       recordLocalSharerInDir(in_msg.addr, in_msg.Requestor);
     }
@@ -1533,7 +1533,7 @@ machine(MachineType:L2Cache, "Token protocol")
     }
   }
 
-  action(l_writebackAckDropData, "\l", desc="Send writeback ack to L1 indicating to drop data") {  //cjc_update4
+  action(l_writebackAckDropData, "\l", desc="Send writeback ack to L1 indicating to drop data") {  
     peek(L1requestNetwork_in, RequestMsg) {
       enqueue( responseNetwork_out, ResponseMsg, response_latency ) {
         out_msg.addr := in_msg.addr;
@@ -3117,14 +3117,14 @@ machine(MachineType:L2Cache, "Token protocol")
     o_popL1RequestQueue;
   }
 
-  transition(OLS, L1_PUTS_only, O) {  //charles: last copy, wb 
+  transition(OLS, L1_PUTS_only, O) {  
     gg_clearLocalSharers;
     removeFromDir;
     l_writebackAckDropDataAndSharerUpdated;
     o_popL1RequestQueue;
   }
 
-  transition(OLSX, L1_PUTS_only, M) {  //charles: last copy, wb 
+  transition(OLSX, L1_PUTS_only, M) {  
     gg_clearLocalSharers;
     removeFromDir;
     l_writebackAckDropDataAndSharerUpdated;

@@ -643,7 +643,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
   } */
 
   //charles adds: issue data to requestor as the owner
-  action(e_sendDataFromOwner, "eos", desc="Send data from cache to requestor") {  //cjc_update4
+  action(e_sendDataFromOwner, "eos", desc="Send data from cache to requestor") { 
     peek(requestNetwork_in, RequestMsg) {
       assert(is_valid(cache_entry));
       if (in_msg.RequestorMachine == MachineType:L2Cache) {
@@ -1039,7 +1039,7 @@ machine(MachineType:L1Cache, "L1 cache protocol")
   }
 
   //charles adds: send data to l2 caused by the back invalidation of sf, but l2 drop the data
-  action(qq_sendWBDataFromTBEToL2AndDrop, "\qd", desc="Send data from TBE to L2 and drop") {  //cjc_update3
+  action(qq_sendWBDataFromTBEToL2AndDrop, "\qd", desc="Send data from TBE to L2 and drop") {  
     enqueue(requestNetwork_out, RequestMsg, request_latency) {
       assert(is_valid(tbe));
       out_msg.addr := address;

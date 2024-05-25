@@ -43,39 +43,35 @@
  *
  */
 
+//Contributed by *Charles Chu*
+//*MOESI_NINE-msg.sm* has been created based on *MOESI_CMP_directory-msg.sm*
+
 // CoherenceRequestType
 enumeration(CoherenceRequestType, desc="...") {
   GETX,      desc="Get eXclusive";
   UPGRADE,   desc="UPGRADE to exclusive";
   GETS,      desc="Get Shared";
-  DeleteL1TBE,       desc="tell l1 to delete tbe";
-  SFsetMru,  desc="sf set mru";
-  GLO_GETS,  desc="Global Get Shared";  //cjc_update5_new
+  SFsetMru,  desc="sf set mru";   //charles adds
+  GLO_GETS,  desc="Global Get Shared";  //charles adds
   PUTX,      desc="Put eXclusive";
   PUTO,      desc="Put Owned";
-  PUT_DATA,  desc="O Put data";  //cjc_update4
+  PUT_DATA,  desc="O Put data";  //charles adds
   PUTO_SHARERS,      desc="Put Owned, but sharers exist so don't remove from sharers list";
   PUTS,      desc="Put Shared";
   INV,       desc="Invalidation";
-  INV2,       desc="Invalidation";
-  INV_SF,    desc="Invalidation by SF";
-  INV_SF_NND, desc="Invalidation by SF and no need data";
-  INV_SF_ECI,  desc="Invalidation by SF ECI and no need data";
-  INV_SF_ECI_NeedData,  desc="Invalidation by SF ECI and need data";
+  INV2,       desc="Invalidation";    //charles adds
+  INV_SF,    desc="Invalidation by SF and need data";   //charles adds
+  INV_SF_NND, desc="Invalidation by SF and not need data";  //charles adds
+  INV_SF_ECI,  desc="Invalidation by SF ECI and no need data";  //charles adds
+  INV_SF_ECI_NeedData,  desc="Invalidation by SF ECI and need data"; //charles adds
   WB_ACK,    desc="Writeback ack";
   WRITEBACK_CLEAN_DATA,   desc="Clean writeback (contains data)";
   WRITEBACK_CLEAN_ACK,    desc="Clean writeback (contains no data)";
   WRITEBACK_DIRTY_DATA,   desc="Dirty writeback (contains data)";
-  WRITEBACK_DIRTY_DATA_L1R_PUTX,  desc="Dirty writeback (contains data), caused by L1 replacement";  //cjc_update4
-  WRITEBACK_CLEAN_DATA_L1R_PUTX,  desc="Clean writeback (contains data), caused by L1 replacement";  //cjc_update4
-  WRITEBACK_DIRTY_DATA_L1R_PUTO,  desc="Dirty writeback (contains data), caused by L1 replacement";  //cjc_update4
-  WRITEBACK_CLEAN_DATA_L1R_PUTO,  desc="Clean writeback (contains data), caused by L1 replacement";  //cjc_update4
-  WRITEBACK_DIRTY_DATA_L1R_PUTS,  desc="Dirty writeback (contains data), caused by L1 replacement";  //cjc_update4
-  WRITEBACK_CLEAN_DATA_L1R_PUTS,  desc="Clean writeback (contains data), caused by L1 replacement";  //cjc_update4
-  WRITEBACK_DIRTY_DATA_SF,  desc="Dirty writeback (contains data), caused by SF INV";  //cjc_update4
-  WRITEBACK_CLEAN_DATA_SF,  desc="Clean writeback (contains data), caused by SF INV";  //cjc_update4
-  WRITEBACK_DIRTY_DATA_DROP,  desc="Dirty writeback (contains data), and drop from l1";  //cjc_update4
-  WRITEBACK_CLEAN_DATA_DROP,  desc="Clean writeback (contains data), and drop from l1";  //cjc_update4
+  WRITEBACK_DIRTY_DATA_SF,  desc="Dirty writeback (contains data), caused by SF INV";  //charles adds
+  WRITEBACK_CLEAN_DATA_SF,  desc="Clean writeback (contains data), caused by SF INV";  //charles adds
+  WRITEBACK_DIRTY_DATA_DROP,  desc="Dirty writeback (contains data), and drop from l1";  //charles adds
+  WRITEBACK_CLEAN_DATA_DROP,  desc="Clean writeback (contains data), and drop from l1";  //charles adds
   DMA_READ,  desc="DMA Read";
   DMA_WRITE, desc="DMA Write";
 }
@@ -85,18 +81,16 @@ enumeration(CoherenceResponseType, desc="...") {
   ACK,               desc="ACKnowledgment, responder doesn't have a copy";
   DATA,              desc="Data";
   DATA_EXCLUSIVE,    desc="Data, no processor has a copy";
-  DATA_EXCLUSIVE_L2M, desc="Data, no processor has a copy, L2M";
-  DATA_EXCLUSIVE_L2S, desc="Data, no processor has a copy, L2M";
-  DATA_OtoS,         desc="Data";  //cjc_update4
+  DATA_OtoS,         desc="Data";  //charles adds
   UNBLOCK,           desc="Unblock";
   SF_REPL,           desc="SF_REPL";
   UNBLOCK_EXCLUSIVE, desc="Unblock, we're in E/M";
-  UNBLOCK_O,         desc="get data from owner";  //cjc_update4
+  UNBLOCK_O,         desc="get data from owner";  //charles adds
   UNBLOCK_ECI,       desc="unblock for eci";
   WB_ACK,            desc="Writeback ack";
   WB_ACK_DATA,       desc="Writeback ack";
-  WB_DROP_DATA,      desc="wb drop data";  //cjc_update4
-  WB_ACK_SU,         desc="Writeback ack, Sharerlist updated"; //cjc_update2
+  WB_DROP_DATA,      desc="wb drop data";  //charles adds
+  WB_ACK_SU,         desc="Writeback ack, Sharerlist updated"; //charles adds
   WB_NACK,           desc="Writeback neg. ack";
   DMA_ACK,           desc="Ack that a DMA write completed";
 }
