@@ -38,6 +38,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+//Contributed by *Charles Chu*
+//*MOESI_NINE_three_level-L0cache-SF_TLH.sm* has been created based on *MOESI_NINE_three_level-L0cache-SF.sm*
+
 machine(MachineType:L0Cache, "MESI Directory L0 Cache")
  : Sequencer * sequencer;
    CacheMemory * Icache;
@@ -59,6 +62,7 @@ machine(MachineType:L0Cache, "MESI Directory L0 Cache")
   // STATES
   state_declaration(State, desc="Cache states", default="L0Cache_State_I") {
     // Base states
+
     // The cache entry has not been allocated.
     I, AccessPermission:Invalid, desc="Invalid";
 
@@ -101,7 +105,7 @@ machine(MachineType:L0Cache, "MESI Directory L0 Cache")
     // invalidations from L1 (due to self or other core)
     InvOwn,          desc="Invalidate request from L1 (own)";
     InvElse,         desc="Invalidate request from L1 (else)";
-    InvSF,           desc="Invalidate request from L1 (sf)";
+    InvSF,           desc="Invalidate request from L1 (sf)"; //charles: inv by sf
 
     // internal generated request
     L0_Replacement,  desc="L0 Replacement", format="!r";
@@ -751,13 +755,13 @@ machine(MachineType:L0Cache, "MESI Directory L0 Cache")
     ff_deallocateCacheBlock;
   }
 
-  transition({I, IS, IM}, {InvOwn, InvElse, InvSF}) {
+  transition({I, IS, IM}, {InvOwn, InvElse, InvSF}) { //charles: add InvSF
     forward_eviction_to_cpu;
     fi_sendInvAck;
     l_popRequestQueue;
   }
 
-  transition(SM, {InvOwn, InvElse, InvSF}, IM) {
+  transition(SM, {InvOwn, InvElse, InvSF}, IM) { //charles: add InvSF
     forward_eviction_to_cpu;
     fi_sendInvAck;
     l_popRequestQueue;
@@ -783,7 +787,7 @@ machine(MachineType:L0Cache, "MESI Directory L0 Cache")
     k_popMandatoryQueue;
   }
 
-  transition(S, L0_Replacement, I) {    //S态表示下级缓存有，不需要写回
+  transition(S, L0_Replacement, I) {//charles: l1 inclusive l0, l1 has data, l0 no need wb to l1 
     forward_eviction_to_cpu;
     ff_deallocateCacheBlock;
   }
@@ -852,14 +856,14 @@ machine(MachineType:L0Cache, "MESI Directory L0 Cache")
     ff_deallocateCacheBlock;
   }
 
-  transition(M, {InvOwn, InvElse, Fwd_GETX}, I) {    //修改过的data需要写回，L0为modified
+  transition(M, {InvOwn, InvElse, Fwd_GETX}, I) {//charles: modified data need wb
     forward_eviction_to_cpu;
     f_sendDataToL1;        
     //ff_deallocateCacheBlock;
     l_popRequestQueue;
   }
 
-  transition(M, {InvSF}, I) {    //修改过的data需要写回，L0为modified
+  transition(M, {InvSF}, I) { //charles: modified data need wb
     forward_eviction_to_cpu;
     getM_LruPosition;
     f_sendDataToL1;        
@@ -867,7 +871,7 @@ machine(MachineType:L0Cache, "MESI Directory L0 Cache")
     l_popRequestQueue;
   }
 
-  transition(M, {Fwd_GETS}, S) {   //why not to O or S?
+  transition(M, {Fwd_GETS}, S) { 
     f_sendDataToL1;
     l_popRequestQueue;
   } 
@@ -888,8 +892,6 @@ machine(MachineType:L0Cache, "MESI Directory L0 Cache")
     n_popResponseQueue;
     kd_wakeUpDependents;
   }
-
-  //        I, S, E, M, SM
 
   transition({IM,SM}, Exclusive_Data, M_W) {
     u_writeDataToCache;
@@ -914,16 +916,11 @@ machine(MachineType:L0Cache, "MESI Directory L0 Cache")
     k_popMandatoryQueue;
   }
 
-  // Transitions from SM
-
   transition(M_W, Use_Timeout, M) {
     jj_unsetUseTimer;
   }
 
-  // Transitions from IS
-
   transition(E_W, Use_Timeout, E) {
     jj_unsetUseTimer;
   }
-
 }

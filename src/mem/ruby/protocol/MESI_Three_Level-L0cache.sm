@@ -1012,7 +1012,7 @@ machine(MachineType:L0Cache, "MESI Directory L0 Cache")
     kd_wakeUpDependents;
   }
 
-  transition(IS, Data_Stale, I) {    //cjc: data在经历了IS_I,所以写给L0的data是stale的
+  transition(IS, Data_Stale, I) {    
     u_writeDataToCache;
     forward_eviction_to_cpu;
     hx_load_hit;

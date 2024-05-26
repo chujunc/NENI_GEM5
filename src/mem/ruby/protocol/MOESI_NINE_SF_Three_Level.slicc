@@ -1,19 +1,17 @@
+//Contributed by *Charles Chu*
+//*MOESI_NINE_SF_Three_Level.slicc* has been created based on *MOESI_NINE_SF.slicc*
+
 protocol "MOESI_NINE_SF_Three_Level";
 include "RubySlicc_interfaces.slicc";
 include "MESI_Three_Level-msg.sm";
 include "MOESI_NINE-msg.sm";
 include "MOESI_NINE_three_level-L0cache-SF.sm";
-//include "MOESI_NINE_three_level-L0cache-SF_TLH.sm";
+//include "MOESI_NINE_three_level-L0cache-SF_TLH.sm"; 
 include "MOESI_NINE_three_level-L1cache-SF.sm";
-//include "MOESI_NINE_three_level-L1cache-SF_TLH+ECI.sm";
-//include "MOESI_NINE_three_level-L1cache-SF_TLH+CRARP.sm";
-//include "MOESI_NINE_three_level-L1cache-SF_CLRAR.sm";
+//include "MOESI_NINE_three_level-L1cache-SF_TLH.sm"; 
+//include "MOESI_NINE_three_level-L1cache-SF_CSAPP.sm"; 
 include "MOESI_NINE_three_level-L2cache-SF.sm";
-//include "MOESI_NINE_three_level-L2cache-SF_TLH+ECI.sm";
-//include "MOESI_NINE_three_level-L2cache-SF_TLH+CRARP.sm";
-//include "MOESI_NINE_three_level-L2cache-SF_TLH+CRARP_v3.sm";
-//include "MOESI_NINE_three_level-L2cache-SF_CLRAR.sm";
-//include "MOESI_NINE_three_level-L2cache-SF_CLRAR_v3.sm";
-//include "MOESI_NINE_three_level-L2cache-SF_CLRAR_v4.sm";
+//include "MOESI_NINE_three_level-L2cache-SF_TLH+SHARP.sm";
+//include "MOESI_NINE_three_level-L2cache-SF_CSAPP.sm"; *
 include "MOESI_NINE-dma.sm";
 include "MOESI_NINE-dir.sm";

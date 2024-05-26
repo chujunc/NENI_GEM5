@@ -1,4 +1,5 @@
-// charles chu
+//Contributed by *Charles Chu*
+//*MOESI_NINE_SF.slicc* has been created based on *MOESI_CMP_directory.slicc*
 protocol "MOESI_NINE_SF";
 include "RubySlicc_interfaces.slicc";
 include "MOESI_NINE-msg.sm";
@@ -10,8 +11,8 @@ include "MOESI_NINE-msg.sm";
 //include "MOESI_NINE-L1cache-SF_TLH_V2.sm";
 //include "MOESI_NINE-L1cache-SF_TLH_V3.sm"; 
 //include "MOESI_NINE-L1cache-SF_ECI.sm"; 
-include "MOESI_NINE-L1cache-SF_ECI_V2.sm"; 
-//include "MOESI_NINE-L1cache-SF_CSAPP.sm"; *
+//include "MOESI_NINE-L1cache-SF_ECI_V2.sm"; 
+include "MOESI_NINE-L1cache-SF_CSAPP.sm"; 
 //----------------------------------------------------------------------------------------//
 //include "MOESI_NINE-L2cache-SF.sm";
 //include "MOESI_NINE-L2cache-SF_V1.sm";
@@ -21,8 +22,8 @@ include "MOESI_NINE-L1cache-SF_ECI_V2.sm";
 //include "MOESI_NINE-L2cache-SF_V2_W3.sm"; 
 //include "MOESI_NINE-L2cache-SF_TLH.sm"; 
 //include "MOESI_NINE-L2cache-SF_ECI.sm"; 
-include "MOESI_NINE-L2cache-SF_ECI_V2.sm"; 
+//include "MOESI_NINE-L2cache-SF_ECI_V2.sm"; 
 //include "MOESI_NINE-L2cache-SF_SHARP.sm"; 
-//include "MOESI_NINE-L2cache-SF_CSAPP.sm"; *
+include "MOESI_NINE-L2cache-SF_CSAPP.sm"; 
 include "MOESI_NINE-dma.sm";
 include "MOESI_NINE-dir.sm";

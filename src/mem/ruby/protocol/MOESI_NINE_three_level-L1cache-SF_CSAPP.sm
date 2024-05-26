@@ -37,6 +37,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+//Contributed by *Charles Chu*
+//*MOESI_NINE_three_level-L1cache-SF_CSAPP.sm* has been created based on *MOESI_NINE_three_level-L1cache-SF_TLH.sm*
 
 machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
  : CacheMemory * cache;
@@ -114,13 +116,13 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
 
     Inv,           desc="Invalidate request from L2 bank";
     Inv2,           desc="Invalidate 2 request from L2 bank";
-    Inv_sf,        desc="Invalidations from SF";
-    Inv_sf_nnd,     desc="Invalidations from SF and no need data";
+    Inv_sf,        desc="Invalidations from SF"; //charles: inv by sf, need data write back
+    Inv_sf_nnd,     desc="Invalidations from SF and no need data";//charles: inv by sf, not need data write back
     Inv_sf_eci,    desc="Invalidations from SF ECI and no need data";
 
     L0_Invalidate_Own,  desc="Invalidate line in L0, due to this cache's (L1) requirements";
     L0_Invalidate_Else, desc="Invalidate line in L0, due to another cache's requirements";
-    L0_Invalidate_SF, desc="Invalidate line in L0, due to another cache's requirements";
+    L0_Invalidate_SF, desc="Invalidate line in L0, due to sf requirements";
     L1_Replacement,     desc="Invalidate line in this cache (L1), due to another cache's requirements";
 
     // other requests
@@ -139,10 +141,10 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     Ack,        desc="Ack for processor, L0 need to be M, so send upgrade and this Ack is for Upgrade";
 
     WB_Ack,        desc="Ack for replacement";
-    Writeback_Ack_SU,     desc="Writeback O.K. from l2";  //cjc_update2
-    Writeback_drop_data,      desc="writeback drop data"; 
-    DataFromOwner,        desc="L1 owner send data to IS"; //cjc_update4
-    Writeback_Ack_Data,   desc="Writeback O.K. from directory";  //Send writeback ack to L1 requesting data
+    Writeback_Ack_SU,     desc="Writeback O.K. from l2";  //charles: add this EVENTS, l2 means llc, it's two-level cache system
+    Writeback_drop_data,      desc="writeback drop data"; //charles: add this EVENTS
+    DataFromOwner,        desc="L1 owner send data to IS"; //charles: add this EVENTS
+    Writeback_Ack_Data,   desc="Writeback O.K. from directory";  //charles: Send ack to tell L1 write back data
     Writeback_Nack,  desc="Writeback not O.K. from directory";
 
     // hardware transactional memory
@@ -321,15 +323,15 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
           } else {
             trigger(Event:Data, in_msg.addr, cache_entry, tbe);
           }
-        } else if (in_msg.Type == CoherenceResponseType:DATA_OtoS) {  //cjc_update4
+        } else if (in_msg.Type == CoherenceResponseType:DATA_OtoS) {  //charles adds: data from remote L1
           trigger(Event:DataFromOwner, in_msg.addr, cache_entry, tbe);
         } else if (in_msg.Type == CoherenceResponseType:ACK) {
             trigger(Event:Ack, in_msg.addr, cache_entry, tbe);
         } else if (in_msg.Type == CoherenceResponseType:WB_ACK) {
           trigger(Event:WB_Ack, in_msg.addr, cache_entry, tbe);
-        } else if (in_msg.Type == CoherenceResponseType:WB_DROP_DATA) {  //cjc_update4
+        } else if (in_msg.Type == CoherenceResponseType:WB_DROP_DATA) {  //charles adds: no need wb data to l2
           trigger(Event:Writeback_drop_data, in_msg.addr, cache_entry, tbe);
-        } else if (in_msg.Type == CoherenceResponseType:WB_ACK_SU) {  //cjc_update2
+        } else if (in_msg.Type == CoherenceResponseType:WB_ACK_SU) {  //charles adds this event
           trigger(Event:Writeback_Ack_SU, in_msg.addr, cache_entry, tbe);
         } else if (in_msg.Type == CoherenceResponseType:WB_ACK_DATA) {
           trigger(Event:Writeback_Ack_Data, in_msg.addr, cache_entry, tbe);
@@ -773,7 +775,8 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     }
   }
 
-  action(g_sendUnblockO, "go", desc="Send unblock to memory") {  //cjc_update4
+  //charles adds: send unblock to l2
+  action(g_sendUnblockO, "go", desc="Send unblock to memory") {
     enqueue(responseNetwork_out, ResponseMsg, l1_to_l2) {
       out_msg.addr := address;
       out_msg.Type := CoherenceResponseType:UNBLOCK_O;
@@ -1250,8 +1253,11 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     k_popL0RequestQueue;
   }
 
-  transition(SS, L1_Replacement, SI) {   //cjc_update2: whether drop silent, don't send message to l2cache? can't, need notice l2 to update local_dir, but we can
-    //straightly update local_dir instead of waiting an ack between l1 and l2.  SI
+   /*charles: whether could drop silently and don't send message to l2? 
+  can't, need notice l2 to update sf, but maybe we could
+  straightly update local_dir instead of waiting an ack between l1 and l2. 
+  */
+  transition(SS, L1_Replacement, SI) {
     i_allocateTBE;
     dd_issuePUTS;
     ff_deallocateCacheBlock;
@@ -1281,7 +1287,6 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
   }
 
   transition({SS, S}, Writeback_Ack_Data) {
-    //d2_sendDataToL2;  // always send data
     qq_sendWBDataFromL1ToL2;
     n_popResponseQueue;
   }
@@ -1318,7 +1323,6 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
   transition({EE,MM}, Store, M) {
     hh_xdata_to_l0;
     uu_profileHit;
-    //a_issueSFsetMruToL2;
     k_popL0RequestQueue;
   }
 
@@ -1438,7 +1442,7 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     l_popL2RequestQueue;
   }
 
-  transition(I, {Writeback_Ack_Data, Writeback_drop_data}) {  //cjc_update3
+  transition(I, {Writeback_Ack_Data, Writeback_drop_data}) {
     n_popResponseQueue;
   }  
 
@@ -1615,7 +1619,7 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     kd_wakeUpDependents;
   }
 
-  transition(S_IL0, L0_Ack, SS) {  //cjc: why go to SS, means one L0 correspond to one L1?
+  transition(S_IL0, L0_Ack, SS) {
     k_popL0RequestQueue;
     kd_wakeUpDependents;
   }
@@ -1647,15 +1651,16 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     forward_eviction_to_L0_SF;
   }
 
-  transition(OM, Fwd_GETS) {  //cjc_update5
+  //charles modifies this transition: response to requestor while issue put data request to l2
+  transition(OM, Fwd_GETS) {
     d_sendDataToRequestor;
     dd_issuePUTData;
     l_popL2RequestQueue;
   }
 
-  transition(OM, Writeback_Ack_Data, SM) {  //cjc_update5
-    qq_sendWBDataFromTBEToL2;  // always send data
-    //s_deallocateTBE;
+  //charles modifies this transition: get l2 response, wb data to l2, l2 to be the owner
+  transition(OM, Writeback_Ack_Data, SM) {
+    qq_sendWBDataFromTBEToL2;
     n_popResponseQueue;
   }  
 
@@ -1714,7 +1719,8 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     kd_wakeUpDependents;
   }
 
-  transition(IS, DataFromOwner, S) {  //cjc_update4
+  //charles adds this transition: l1 get data from other l1
+  transition(IS, DataFromOwner, S) {
     u_writeDataFromL2Response;
     m_decrementNumberOfMessages;
     h_data_to_l0;
@@ -1799,8 +1805,8 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     l_popL2RequestQueue;
   }
 
-  transition(MI, Writeback_Ack_Data, I) {  //cjc_update3
-    qq_sendWBDataFromTBEToL2AndDrop;  // always send data
+  transition(MI, Writeback_Ack_Data, I) {
+    qq_sendWBDataFromTBEToL2AndDrop;
     s_deallocateTBE;
     n_popResponseQueue;
     kd_wakeUpDependents;
@@ -1831,13 +1837,13 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     kd_wakeUpDependents;
   }
 
-  transition({SI, MI, II}, Writeback_Ack_SU, I) {  //cjc_update2
+  transition({SI, MI, II}, Writeback_Ack_SU, I) {
     s_deallocateTBE;
     n_popResponseQueue;
     kd_wakeUpDependents;
   }
 
-  transition(I, Writeback_Ack_SU) {  //cjc_update2
+  transition(I, Writeback_Ack_SU) {
     n_popResponseQueue;
   }
 
