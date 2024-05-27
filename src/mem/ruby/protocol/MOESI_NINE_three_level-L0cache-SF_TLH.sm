@@ -39,7 +39,7 @@
  */
 
 //Contributed by *Charles Chu*
-//*MOESI_NINE_three_level-L0cache-SF_TLH.sm* has been created based on *MOESI_NINE_three_level-L0cache-SF.sm*
+//*MOESI_NINE_three_level-L0cache-SF_TLH.sm* has been created based on *MOESI_NINE_three_level-L0cache-SF.sm* and *MOESI_NINE-L1cache-SF_TLH_V3.sm*
 
 machine(MachineType:L0Cache, "MESI Directory L0 Cache")
  : Sequencer * sequencer;

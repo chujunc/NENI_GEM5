@@ -272,6 +272,7 @@ CacheMemory::cacheAvail(Addr address) const
     return false;
 }
 
+//charles: determine all ways of the set of sf whether is available
 bool
 CacheMemory::cacheAvailForECI(Addr address) const
 {
@@ -366,6 +367,7 @@ CacheMemory::cacheProbe(Addr address) const
                         getVictim(candidates)->getWay()]->m_Address;
 }
 
+//charles: find one way of the set of sf which is the next victim
 Addr
 CacheMemory::cacheProbeForECI(Addr address) const
 {
@@ -382,6 +384,9 @@ CacheMemory::cacheProbeForECI(Addr address) const
                         getVictim(candidates)->getWay()]->m_Address;
 }
 
+/*charles: find one way of the set of sf which is the next victim,
+have another parameter 'int cnt' to get the victim in lru position cnt.
+*/
 Addr
 CacheMemory::cacheProbeForCRAR(Addr address, int cnt) const
 {
@@ -398,7 +403,7 @@ CacheMemory::cacheProbeForCRAR(Addr address, int cnt) const
                         getVictimCRAR(candidates, cnt)->getWay()]->m_Address;
 }
 
-// looks an address up in the cache
+//charles: record the lru position of cacheline when it gets invalid from sf 
 int
 CacheMemory::GetDcache_Mstate_LruPosition(Addr address) 
 {

@@ -38,6 +38,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*Contributed by *Charles Chu*, add cacheAvailForECI, cacheProbeForECI, cacheProbeForCRAR
+GetDcache_Mstate_LruPosition, GetDcache_Sstate_LruPosition, GetIcache_Mstate_LruPosition
+GetIcache_Sstate_LruPosition, profileDcache_Mstate_LruPosition, profileDcache_Sstate_LruPosition,
+profileIcache_Mstate_LruPosition, profileIcache_Sstate_LruPosition
+*/
 
 #ifndef __MEM_RUBY_STRUCTURES_CACHEMEMORY_HH__
 #define __MEM_RUBY_STRUCTURES_CACHEMEMORY_HH__
